@@ -97,6 +97,12 @@ const App: React.FC = () => {
   const [isEditLogoModalOpen, setIsEditLogoModalOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    name: '',
+    projectName: '',
+    profileName: ''
+  });
   const [memberToDelete, setMemberToDelete] = useState<TeamMember | null>(null);
   const [historyMemberToDelete, setHistoryMemberToDelete] = useState<string | null>(null);
   const [sortField, setSortField] = useState<SortField>('name');
@@ -194,6 +200,13 @@ const App: React.FC = () => {
 
   const isUpdateOverdue = (member: TeamMember) => {
     if (member.progress >= 100) return false;
+    
+    // Manual control takes precedence
+    if (member.nextUpdateDate) {
+      const nextUpdate = new Date(member.nextUpdateDate);
+      return currentTime.getTime() > nextUpdate.getTime();
+    }
+
     const targetHours = member.syncTargetHours || getUpdateRule(member.pageCount).hours;
     const assigned = new Date(member.assignedDate);
     const diffInHours = (currentTime.getTime() - assigned.getTime()) / (1000 * 60 * 60);
@@ -322,10 +335,19 @@ const App: React.FC = () => {
       base = members.filter(m => m.progress >= 85);
     }
 
-    const filtered = base.filter(member => 
-      member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      member.projectName.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filtered = base.filter(member => {
+      const searchLower = searchQuery.toLowerCase();
+      const matchesSearch = !searchQuery || 
+        member.name.toLowerCase().includes(searchLower) ||
+        member.projectName.toLowerCase().includes(searchLower) ||
+        (member.profileName && member.profileName.toLowerCase().includes(searchLower));
+      
+      const matchesName = !filters.name || member.name.toLowerCase().includes(filters.name.toLowerCase());
+      const matchesProject = !filters.projectName || member.projectName.toLowerCase().includes(filters.projectName.toLowerCase());
+      const matchesProfile = !filters.profileName || (member.profileName && member.profileName.toLowerCase().includes(filters.profileName.toLowerCase()));
+
+      return matchesSearch && matchesName && matchesProject && matchesProfile;
+    });
 
     return [...filtered].sort((a, b) => {
       let comparison = 0;
@@ -349,6 +371,19 @@ const App: React.FC = () => {
     const memberWithId = { ...newMember, id: uniqueId };
     setMembers(prev => [memberWithId, ...prev]);
     setHistory(prev => [{ ...memberWithId, archivedAt: new Date().toISOString() }, ...prev]);
+    setIsAddModalOpen(false);
+  };
+
+  const handleBulkAddMembers = (newMembers: Omit<TeamMember, 'id'>[]) => {
+    const membersWithIds = newMembers.map((m, idx) => ({
+      ...m,
+      id: `mem_${Date.now()}_${idx}_${Math.random().toString(36).substr(2, 5)}`
+    }));
+    setMembers(prev => [...membersWithIds, ...prev]);
+    setHistory(prev => [
+      ...membersWithIds.map(m => ({ ...m, archivedAt: new Date().toISOString() })),
+      ...prev
+    ]);
     setIsAddModalOpen(false);
   };
 
@@ -394,6 +429,30 @@ const App: React.FC = () => {
   };
 
   const isAdmin = currentUser?.email === 'farhadhossain6920@gmail.com';
+
+  // AUTO-FIX FOR 2001 BREACHED DATES
+  useEffect(() => {
+    const hasBreachedDates = members.some(m => m.deliveryDate.includes('2001') || m.assignedDate.includes('2001')) ||
+                             history.some(h => h.deliveryDate.includes('2001') || h.assignedDate.includes('2001'));
+    if (hasBreachedDates) {
+      const fixedMembers = members.map(m => ({
+        ...m,
+        deliveryDate: m.deliveryDate.replace('2001', '2026'),
+        assignedDate: m.assignedDate.replace('2001', '2026')
+      }));
+      const fixedHistory = history.map(h => ({
+        ...h,
+        deliveryDate: h.deliveryDate.replace('2001', '2026'),
+        assignedDate: h.assignedDate.replace('2001', '2026')
+      }));
+      setMembers(fixedMembers);
+      setHistory(fixedHistory);
+      // Also update cloud if admin
+      if (isAdmin && currentUser) {
+        SyncService.saveUserData(currentUser.email, { members: fixedMembers, history: fixedHistory, logoUrl });
+      }
+    }
+  }, [members, history, isAdmin, currentUser, logoUrl]);
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) return <ArrowUpDown className="w-3 h-3 ml-1 text-gray-600 transition-transform group-hover:scale-125" />;
@@ -571,15 +630,24 @@ const App: React.FC = () => {
                 )}
               </div>
 
-              <div className="relative group/search">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 w-3 h-3" />
-                <input 
-                  type="text" 
-                  placeholder="Scan..."
-                  className="pl-8 pr-3 py-2 bg-white/[0.02] border border-white/10 rounded-xl focus:outline-none focus:border-purple-500/40 backdrop-blur-3xl w-28 md:w-48 transition-all text-[10px] md:text-xs font-semibold"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+              <div className="flex items-center gap-2">
+                <div className="relative group/search">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 w-3 h-3" />
+                  <input 
+                    type="text" 
+                    placeholder="Scan..."
+                    className="pl-8 pr-3 py-2 bg-white/[0.02] border border-white/10 rounded-xl focus:outline-none focus:border-purple-500/40 backdrop-blur-3xl w-28 md:w-48 transition-all text-[10px] md:text-xs font-semibold"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                <button 
+                  onClick={() => setIsFilterOpen(!isFilterOpen)}
+                  className={`p-2 rounded-xl border transition-all ${isFilterOpen ? 'bg-purple-500/20 border-purple-500/40 text-purple-400' : 'bg-white/[0.02] border-white/10 text-gray-600 hover:text-gray-400'}`}
+                  title="Advanced Filters"
+                >
+                  <ListFilter className="w-4 h-4" />
+                </button>
               </div>
             </div>
             
@@ -623,6 +691,60 @@ const App: React.FC = () => {
             </div>
           </div>
         </header>
+
+        {/* ADVANCED FILTERS */}
+        {isFilterOpen && (
+          <div className="mb-8 p-6 bg-white/[0.02] border border-white/10 rounded-2xl backdrop-blur-3xl animate-in fade-in slide-in-from-top-4 duration-500">
+            <div className="flex items-center gap-2 mb-4">
+              <ListFilter className="w-4 h-4 text-purple-500" />
+              <h3 className="text-[10px] font-black text-white uppercase tracking-widest">Advanced Filtering Node</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Member Identity</label>
+                <input 
+                  type="text" 
+                  placeholder="Filter by name..."
+                  className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-xs text-white placeholder:text-gray-700 focus:outline-none focus:border-purple-500/30 transition-all font-medium"
+                  value={filters.name}
+                  onChange={(e) => setFilters({...filters, name: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Project Designation</label>
+                <input 
+                  type="text" 
+                  placeholder="Filter by project..."
+                  className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-xs text-white placeholder:text-gray-700 focus:outline-none focus:border-purple-500/30 transition-all font-medium"
+                  value={filters.projectName}
+                  onChange={(e) => setFilters({...filters, projectName: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Profile Signature</label>
+                <input 
+                  type="text" 
+                  placeholder="Filter by profile..."
+                  className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-xs text-white placeholder:text-gray-700 focus:outline-none focus:border-purple-500/30 transition-all font-medium"
+                  value={filters.profileName}
+                  onChange={(e) => setFilters({...filters, profileName: e.target.value})}
+                />
+              </div>
+            </div>
+            <div className="mt-6 pt-4 border-t border-white/5 flex justify-between items-center">
+              <p className="text-[9px] font-bold text-gray-600 uppercase tracking-tight">
+                Showing <span className="text-purple-500">{filteredAndSortedMembers.length}</span> of <span className="text-gray-400">{members.length}</span> active nodes
+              </p>
+              <button 
+                onClick={() => setFilters({ name: '', projectName: '', profileName: '' })}
+                className="flex items-center gap-2 px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-lg text-[9px] font-black text-rose-500 uppercase tracking-widest transition-all"
+              >
+                <RefreshCw className="w-3 h-3" />
+                Reset Filters
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* TAB NAVIGATION */}
         <div className="flex items-center gap-1 mb-8 p-1 bg-white/[0.02] border border-white/10 rounded-2xl w-full sm:w-fit backdrop-blur-xl animate-in slide-in-from-left-4 duration-500 overflow-x-auto no-scrollbar">
@@ -864,17 +986,34 @@ const App: React.FC = () => {
                               <div className="flex flex-col items-center gap-1.5">
                                 <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${overdue ? 'bg-amber-500/20 border-amber-500/50 text-amber-500 animate-pulse' : 'bg-white/5 text-gray-500 border-white/10 group-hover/tr:text-purple-400 group-hover/tr:border-purple-500/20'}`}>
                                   {isAdmin ? (
-                                    <div className="flex items-center gap-1">
-                                      <input 
-                                        type="number" 
-                                        value={member.syncTargetHours || rule.hours} 
-                                        onChange={(e) => handleUpdateField(member.id, 'syncTargetHours', parseInt(e.target.value) || 0)} 
-                                        className="bg-transparent border-none p-0 text-[10px] font-black text-center focus:ring-0 w-8"
-                                      />
-                                      <span>H TARGET</span>
+                                    <div className="flex flex-col items-center gap-1">
+                                      <div className="flex items-center gap-1">
+                                        <input 
+                                          type="number" 
+                                          value={member.syncTargetHours || rule.hours} 
+                                          onChange={(e) => handleUpdateField(member.id, 'syncTargetHours', parseInt(e.target.value) || 0)} 
+                                          className="bg-transparent border-none p-0 text-[10px] font-black text-center focus:ring-0 w-8"
+                                        />
+                                        <span>H TARGET</span>
+                                      </div>
+                                      <div className="h-px w-full bg-white/10 my-1"></div>
+                                      <div className="flex flex-col items-center">
+                                        <span className="text-[7px] text-gray-600 mb-0.5">MANUAL SYNC</span>
+                                        <input 
+                                          type="date" 
+                                          value={member.nextUpdateDate || ''} 
+                                          onChange={(e) => handleUpdateField(member.id, 'nextUpdateDate', e.target.value)} 
+                                          className="bg-transparent border-none p-0 text-[9px] font-bold text-purple-400 focus:ring-0 [color-scheme:dark] cursor-pointer"
+                                        />
+                                      </div>
                                     </div>
                                   ) : (
-                                    member.syncTargetHours ? `${member.syncTargetHours}H TARGET` : rule.label
+                                    <div className="flex flex-col items-center">
+                                      <span>{member.syncTargetHours ? `${member.syncTargetHours}H TARGET` : rule.label}</span>
+                                      {member.nextUpdateDate && (
+                                        <span className="text-[8px] text-purple-400 mt-1">NEXT: {new Date(member.nextUpdateDate).toLocaleDateString()}</span>
+                                      )}
+                                    </div>
                                   )}
                                 </div>
                                 <div className="flex items-center gap-1">
@@ -1207,7 +1346,13 @@ const App: React.FC = () => {
         </footer>
       </div>
 
-      {isAddModalOpen && <AddMemberModal onClose={() => setIsAddModalOpen(false)} onSubmit={handleAddMember} />}
+      {isAddModalOpen && (
+        <AddMemberModal 
+          onClose={() => setIsAddModalOpen(false)} 
+          onSubmit={handleAddMember} 
+          onBulkSubmit={handleBulkAddMembers}
+        />
+      )}
       {isEditLogoModalOpen && <EditLogoModal initialUrl={logoUrl} onClose={() => setIsEditLogoModalOpen(false)} onUpdate={(newUrl) => { setLogoUrl(newUrl); setIsEditLogoModalOpen(false); }} />}
       {memberToDelete && <DeleteConfirmModal memberName={memberToDelete.name} onClose={() => setMemberToDelete(null)} onConfirm={confirmDelete} />}
       {historyMemberToDelete && <DeleteConfirmModal memberName={historyMemberToDelete} onClose={() => setHistoryMemberToDelete(null)} onConfirm={confirmDeleteHistory} />}

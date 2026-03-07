@@ -12,6 +12,7 @@ export interface TeamMember {
   progress: number; // 0 to 100
   themeColor: string; // Tailwind color class prefix (e.g., 'purple', 'blue', 'emerald')
   syncTargetHours?: number; // Optional override for sync protocol target hours
+  nextUpdateDate?: string; // Manual control for next update due date
 }
 
 export interface HistoricalProject extends TeamMember {
