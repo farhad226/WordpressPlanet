@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Mail, Lock, User as UserIcon, LogIn, ArrowRight, ShieldCheck, Sparkles, AlertTriangle, Fingerprint, CloudLightning, RefreshCw } from 'lucide-react';
+import { supabase } from '../services/supabase';
 import { User, UserStorageData } from '../types';
 import GlassCard from './GlassCard';
 
@@ -17,47 +18,69 @@ const AuthModal: React.FC<AuthModalProps> = ({ onAuthSuccess }) => {
   const [error, setError] = useState('');
   const [isFocused, setIsFocused] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
 
     if (!email || !password) {
       setError('Missing credentials. Please check all fields.');
+      setIsLoading(false);
       return;
     }
 
-    const usersStr = localStorage.getItem('wp_team_users');
-    const users: User[] = usersStr ? JSON.parse(usersStr) : [];
+    try {
+      if (isLogin) {
+        const { data, error: authError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
 
-    if (isLogin) {
-      const user = users.find(u => u.email === email && u.password === password);
-      if (user) {
-        onAuthSuccess({ email: user.email });
-      } else {
-        setError('Access denied. Invalid credentials provided.');
-      }
-    } else {
-      if (users.find(u => u.email === email)) {
-        setError('This email is already registered.');
-      } else {
-        // Register logic
-        const newUser = { email, password };
-        users.push(newUser);
-        localStorage.setItem('wp_team_users', JSON.stringify(users));
-        
-        // Portability: If they provided a sync code, save it to their data key
-        if (syncCode.trim()) {
-          try {
-            const decoded = atob(syncCode);
-            const data: UserStorageData = JSON.parse(decoded);
-            localStorage.setItem(`wp_team_data_${email}`, JSON.stringify(data));
-          } catch (e) {
-            console.error("Sync code corruption detected.");
-          }
+        if (authError) throw authError;
+
+        if (data.user) {
+          onAuthSuccess({ email: data.user.email! });
         }
-        
-        onAuthSuccess({ email: newUser.email });
+      } else {
+        // Register logic with Supabase
+        const { data, error: authError } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+
+        if (authError) throw authError;
+
+        if (data.user) {
+          // Portability: If they provided a sync code, save it to their data key
+          if (syncCode.trim()) {
+            try {
+              const decoded = atob(syncCode);
+              const storageData: UserStorageData = JSON.parse(decoded);
+              // We save this to Supabase immediately for the new user
+              const { error: saveError } = await supabase
+                .from('user_data')
+                .upsert({ 
+                  email: data.user.email, 
+                  data: storageData, 
+                  updated_at: new Date().toISOString() 
+                }, { onConflict: 'email' });
+              
+              if (saveError) console.error("Initial sync failed:", saveError);
+            } catch (e) {
+              console.error("Sync code corruption detected.");
+            }
+          }
+          
+          onAuthSuccess({ email: data.user.email! });
+        }
       }
+    } catch (err: any) {
+      console.error("Auth error:", err);
+      setError(err.message || 'Authentication failed. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -157,11 +180,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ onAuthSuccess }) => {
 
             <button 
               type="submit"
-              className="w-full group relative py-4 bg-white text-black font-black text-[11px] uppercase tracking-[0.3em] rounded-2xl shadow-xl shadow-purple-900/10 transition-all hover:bg-purple-500 hover:text-white active:scale-[0.97] flex items-center justify-center gap-3 mt-4 overflow-hidden"
+              disabled={isLoading}
+              className="w-full group relative py-4 bg-white text-black font-black text-[11px] uppercase tracking-[0.3em] rounded-2xl shadow-xl shadow-purple-900/10 transition-all hover:bg-purple-500 hover:text-white active:scale-[0.97] flex items-center justify-center gap-3 mt-4 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <span className="relative z-10 flex items-center gap-2">
-                {isLogin ? (
+                {isLoading ? (
+                  <>
+                    Processing <RefreshCw className="w-4 h-4 animate-spin" />
+                  </>
+                ) : isLogin ? (
                   <>
                     Access System <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </>

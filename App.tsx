@@ -52,15 +52,34 @@ import DeleteConfirmModal from './components/DeleteConfirmModal';
 import EditLogoModal from './components/EditLogoModal';
 import AuthModal from './components/AuthModal';
 import { SyncService } from './services/SyncService';
+import { supabase } from './services/supabase';
 
 const DEFAULT_LOGO_URL = 'https://i.imgur.com/8Qp6u8f.png'; 
 
 const App: React.FC = () => {
   // Authentication state
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('wp_team_current_user');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  // 0. AUTH SESSION TRACKING: Listen for Supabase Auth state changes
+  useEffect(() => {
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setCurrentUser({ email: session.user.email! });
+      }
+    });
+
+    // Listen for changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setCurrentUser({ email: session.user.email! });
+      } else {
+        setCurrentUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // User-specific data states
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -95,14 +114,11 @@ const App: React.FC = () => {
           setMembers(cloudData.members);
           setHistory(cloudData.history);
           setLogoUrl(cloudData.logoUrl || DEFAULT_LOGO_URL);
-          localStorage.setItem('wp_team_current_user', JSON.stringify(currentUser));
         } catch (error) {
           console.error("Failed to sync with cloud node:", error);
         } finally {
           setIsSyncing(false);
         }
-      } else {
-        localStorage.removeItem('wp_team_current_user');
       }
     };
 
@@ -139,7 +155,8 @@ const App: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     setCurrentUser(null);
     setActiveTab('fleet');
   };
