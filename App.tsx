@@ -93,7 +93,7 @@ const App: React.FC = () => {
   // UI & Sync state
   const [isSyncing, setIsSyncing] = useState(false);
   const [isCloudSaving, setIsCloudSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<'fleet' | 'delivery' | 'ledger'>('fleet');
+  const [activeTab, setActiveTab] = useState<'fleet' | 'delivery' | 'ledger' | 'performance'>('fleet');
   const [searchQuery, setSearchQuery] = useState('');
   const [ledgerSearchQuery, setLedgerSearchQuery] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -113,10 +113,12 @@ const App: React.FC = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [copyStatus, setCopyStatus] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
+  const isAdmin = useMemo(() => currentUser?.email === 'farhadhossain6920@gmail.com', [currentUser]);
 
   const [guests, setGuests] = useState<GuestAccess[]>([]);
   const [guestPermissions, setGuestPermissions] = useState<GuestAccess | null>(null);
   const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
+  const [expandedMember, setExpandedMember] = useState<string | null>(null);
 
   useEffect(() => {
     if (guestPermissions) {
@@ -136,8 +138,6 @@ const App: React.FC = () => {
       if (currentUser) {
         setIsSyncing(true);
         try {
-          const isAdmin = currentUser.email === 'farhadhossain6920@gmail.com';
-          
           if (isAdmin) {
             const cloudData = await SyncService.fetchUserData(currentUser.email);
             setMembers(cloudData.members);
@@ -521,8 +521,6 @@ const App: React.FC = () => {
     }
   };
 
-  const isAdmin = currentUser?.email === 'farhadhossain6920@gmail.com';
-
   // AUTO-FIX FOR 2001 BREACHED DATES
   useEffect(() => {
     const hasBreachedDates = members.some(m => m.deliveryDate.includes('2001') || m.assignedDate.includes('2001')) ||
@@ -887,9 +885,20 @@ const App: React.FC = () => {
               Member Ledger
             </button>
           )}
+          {isAdmin && (
+            <button 
+              onClick={() => setActiveTab('performance')}
+              className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeTab === 'performance' ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)]' : 'text-gray-600 hover:text-gray-400'}`}
+            >
+              <TrendingUp className="w-3 h-3 md:w-3.5 md:h-3.5" />
+              Performance
+            </button>
+          )}
         </div>
 
-        {activeTab !== 'ledger' ? (
+        {activeTab === 'performance' ? (
+          <PerformanceView members={members} />
+        ) : activeTab !== 'ledger' ? (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 mb-8">
               {(activeTab === 'fleet' ? 
@@ -1314,36 +1323,72 @@ const App: React.FC = () => {
               {ledgerStats.length > 0 ? (
                 ledgerStats.map((stat, i) => (
                   <GlassCard key={i} className="group relative overflow-hidden border-white/10 hover:border-emerald-500/30 transition-all duration-500 hover:shadow-[0_0_50px_rgba(16,185,129,0.1)] flex flex-col h-full">
-                    <div className="p-4 md:p-6 flex-1">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-8">
-                        <div className="flex items-center gap-4">
-                          <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br ${getColorClass(stat.color)} flex items-center justify-center font-black text-base md:text-lg shadow-2xl group-hover:scale-110 transition-transform duration-500 border border-white/20 shrink-0`}>
-                            {stat.name.split(' ').map(n => n[0]).join('')}
+                      <div className="p-4 md:p-6 flex-1 cursor-pointer" onClick={() => setExpandedMember(expandedMember === stat.name ? null : stat.name)}>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-8">
+                          <div className="flex items-center gap-4">
+                            <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br ${getColorClass(stat.color)} flex items-center justify-center font-black text-base md:text-lg shadow-2xl group-hover:scale-110 transition-transform duration-500 border border-white/20 shrink-0`}>
+                              {stat.name.split(' ').map(n => n[0]).join('')}
+                            </div>
+                            <div className="min-w-0">
+                              <h3 className="text-lg md:text-xl font-black text-white tracking-tight truncate">{stat.name}</h3>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-[8px] md:text-[9px] text-emerald-500 font-black uppercase tracking-[0.2em] bg-emerald-500/10 px-2 py-0.5 rounded-lg whitespace-nowrap">Verified Node</span>
+                                <span className="hidden xs:inline text-[8px] md:text-[9px] text-gray-500 font-bold uppercase tracking-widest truncate">• Total Workload</span>
+                              </div>
+                            </div>
                           </div>
-                          <div className="min-w-0">
-                            <h3 className="text-lg md:text-xl font-black text-white tracking-tight truncate">{stat.name}</h3>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-[8px] md:text-[9px] text-emerald-500 font-black uppercase tracking-[0.2em] bg-emerald-500/10 px-2 py-0.5 rounded-lg whitespace-nowrap">Verified Node</span>
-                              <span className="hidden xs:inline text-[8px] md:text-[9px] text-gray-500 font-bold uppercase tracking-widest truncate">• Total Workload</span>
+                          <div className="flex items-center justify-between sm:justify-end gap-3">
+                            {(!guestPermissions || guestPermissions.canEdit) && (
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); initiateDeleteHistory(stat.name); }}
+                                className="p-2 text-gray-600 hover:text-rose-500 hover:bg-rose-500/15 rounded-xl transition-all active:scale-90 group/del-hist"
+                                title="Delete Member History"
+                              >
+                                <Trash2 className="w-4 h-4 transition-transform group-hover/del-hist:scale-110" />
+                              </button>
+                            )}
+                            <div className="flex sm:flex-col items-center sm:items-end gap-2 sm:gap-0">
+                               <Award className="w-5 h-5 md:w-6 md:h-6 text-emerald-500 sm:mb-1" />
+                               <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Performance Tier 1</span>
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between sm:justify-end gap-3">
-                          {(!guestPermissions || guestPermissions.canEdit) && (
-                            <button 
-                              onClick={() => initiateDeleteHistory(stat.name)}
-                              className="p-2 text-gray-600 hover:text-rose-500 hover:bg-rose-500/15 rounded-xl transition-all active:scale-90 group/del-hist"
-                              title="Delete Member History"
-                            >
-                              <Trash2 className="w-4 h-4 transition-transform group-hover/del-hist:scale-110" />
-                            </button>
-                          )}
-                          <div className="flex sm:flex-col items-center sm:items-end gap-2 sm:gap-0">
-                             <Award className="w-5 h-5 md:w-6 md:h-6 text-emerald-500 sm:mb-1" />
-                             <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Performance Tier 1</span>
+
+                        {/* Expanded Details Section */}
+                        {expandedMember === stat.name && (
+                          <div className="mt-4 pt-4 border-t border-white/10 animate-in slide-in-from-top-2 duration-300">
+                             <div className="flex items-center justify-between mb-3">
+                               <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Project Breakdown</h4>
+                               <div className="flex gap-2">
+                                 <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest bg-amber-500/10 px-2 py-1 rounded-lg">
+                                   WIP: {members.filter(m => m.name === stat.name && !m.isDelivered).length}
+                                 </span>
+                                 <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-500/10 px-2 py-1 rounded-lg">
+                                   Delivered: {members.filter(m => m.name === stat.name && m.isDelivered).length}
+                                 </span>
+                               </div>
+                             </div>
+                             <div className="space-y-2">
+                               {members
+                                 .filter(m => m.name === stat.name)
+                                 .map(m => (
+                                 <div key={m.id} className="flex items-center justify-between p-2 bg-white/5 rounded-lg">
+                                    <div className="flex flex-col">
+                                      <span className="text-xs text-white font-medium">{m.projectName}</span>
+                                      {m.isDelivered && (
+                                        <span className="text-[9px] text-gray-500 font-bold uppercase">
+                                          Delivered: {new Date(m.deliveryDate).toLocaleString('default', { month: 'long', year: 'numeric' })}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${m.isDelivered ? 'bg-emerald-500/20 text-emerald-500' : 'bg-amber-500/20 text-amber-500'}`}>
+                                      {m.isDelivered ? 'Delivered' : 'WIP'}
+                                    </span>
+                                 </div>
+                               ))}
+                             </div>
                           </div>
-                        </div>
-                      </div>
+                        )}
 
                       <div className="grid grid-cols-3 gap-2 md:gap-4 mb-6 md:mb-8">
                         {(!guestPermissions || guestPermissions.canViewFinancials) ? (
@@ -1362,7 +1407,17 @@ const App: React.FC = () => {
                           <p className="text-[7px] md:text-[8px] font-black text-gray-600 uppercase tracking-[0.2em] mb-1 md:mb-1.5 flex items-center gap-1 md:gap-1.5">
                             <Package className="w-2 h-2 text-blue-500" /> <span className="hidden xs:inline">Projects</span><span className="xs:hidden">Proj</span>
                           </p>
-                          <p className="text-sm md:text-xl font-black text-white font-mono tracking-tighter">{stat.projectsCount}</p>
+                          <div className="flex items-baseline gap-2">
+                            <p className="text-sm md:text-xl font-black text-white font-mono tracking-tighter">{stat.projectsCount}</p>
+                            <div className="flex gap-1">
+                              <span className="text-[8px] font-black text-amber-500 bg-amber-500/10 px-1 py-0.5 rounded">
+                                {members.filter(m => m.name === stat.name && !m.isDelivered).length} WIP
+                              </span>
+                              <span className="text-[8px] font-black text-emerald-500 bg-emerald-500/10 px-1 py-0.5 rounded">
+                                {members.filter(m => m.name === stat.name && m.isDelivered).length} DLV
+                              </span>
+                            </div>
+                          </div>
                         </div>
                         <div className="bg-white/[0.02] p-3 md:p-4 rounded-2xl border border-white/5 group-hover:bg-white/[0.04] transition-colors">
                           <p className="text-[7px] md:text-[8px] font-black text-gray-600 uppercase tracking-[0.2em] mb-1 md:mb-1.5 flex items-center gap-1 md:gap-1.5">
@@ -1581,3 +1636,90 @@ const App: React.FC = () => {
 };
 
 export default App;
+
+const PerformanceView = ({ members }: { members: any[] }) => {
+  const [selectedMonth, setSelectedMonth] = useState<string>('All');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  const { performanceData, allMonths } = useMemo(() => {
+    const data: Record<string, Record<string, number>> = {};
+    const monthsSet = new Set<string>();
+    
+    members.forEach(m => {
+      if (m.isDelivered) {
+        const monthYear = new Date(m.deliveryDate).toLocaleString('default', { month: 'long', year: 'numeric' });
+        monthsSet.add(monthYear);
+        if (!data[m.name]) data[m.name] = {};
+        if (!data[m.name][monthYear]) data[m.name][monthYear] = 0;
+        data[m.name][monthYear] += m.projectValue;
+      }
+    });
+    return { performanceData: data, allMonths: Array.from(monthsSet).sort((a, b) => new Date(b).getTime() - new Date(a).getTime()) };
+  }, [members]);
+
+  const filteredData = useMemo(() => {
+    let filtered = { ...performanceData };
+    
+    if (selectedMonth !== 'All') {
+      const monthFiltered: Record<string, Record<string, number>> = {};
+      Object.entries(filtered).forEach(([name, months]) => {
+        if (months[selectedMonth]) {
+          monthFiltered[name] = { [selectedMonth]: months[selectedMonth] };
+        }
+      });
+      filtered = monthFiltered;
+    }
+
+    if (searchQuery) {
+      const searchFiltered: Record<string, Record<string, number>> = {};
+      Object.entries(filtered).forEach(([name, months]: [string, Record<string, number>]) => {
+        if (name.toLowerCase().includes(searchQuery.toLowerCase())) {
+          searchFiltered[name] = months;
+        }
+      });
+      filtered = searchFiltered;
+    }
+
+    return filtered;
+  }, [performanceData, selectedMonth, searchQuery]);
+
+  return (
+    <div className="space-y-6 animate-in fade-in zoom-in duration-500">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <h2 className="text-xl font-black uppercase tracking-widest text-white">Performance Analytics</h2>
+        <div className="flex items-center gap-4 w-full sm:w-auto">
+          <input 
+            type="text" 
+            placeholder="Search member..."
+            className="bg-[#050505] border border-white/20 text-white text-sm rounded-xl px-4 py-2 focus:outline-none focus:border-purple-500/50 w-full sm:w-48"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <select 
+            className="bg-[#050505] border border-white/20 text-white text-sm rounded-xl px-4 py-2 focus:outline-none focus:border-purple-500/50"
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+          >
+            <option value="All" className="bg-[#050505] text-white">All Months</option>
+            {allMonths.map(month => <option key={month} value={month} className="bg-[#050505] text-white">{month}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {Object.entries(filteredData).map(([name, months]) => (
+          <GlassCard key={name} className="p-6 border-white/10">
+            <h3 className="text-lg font-black text-white mb-4">{name}</h3>
+            <div className="space-y-2">
+              {Object.entries(months).map(([month, value]) => (
+                <div key={month} className="flex justify-between items-center text-sm">
+                  <span className="text-gray-400">{month}</span>
+                  <span className="text-emerald-400 font-mono font-bold">${value.toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          </GlassCard>
+        ))}
+      </div>
+    </div>
+  );
+};
