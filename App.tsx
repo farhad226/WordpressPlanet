@@ -143,7 +143,7 @@ const App: React.FC = () => {
             setMembers(cloudData.members);
             setHistory(cloudData.history);
             setLogoUrl(cloudData.logoUrl || DEFAULT_LOGO_URL);
-            setGuests((cloudData.guests || []).map(g => ({ ...g, role: g.role || 'Viewer' })));
+            setGuests((cloudData.guests || []).map(g => ({ ...g, role: g.role || 'Viewer', canEdit: g.canEdit ?? false })));
             setGuestPermissions(null);
           } else {
             const adminData = await SyncService.fetchUserData('farhadhossain6920@gmail.com');

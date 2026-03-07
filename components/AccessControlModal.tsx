@@ -20,6 +20,7 @@ const AccessControlModal: React.FC<AccessControlModalProps> = ({ guests, onUpdat
     const newGuest: GuestAccess = {
       email: newEmail.trim(),
       role: 'Viewer',
+      canEdit: false,
       canViewFleet: true,
       canViewDelivery: true,
       canViewLedger: true,
@@ -122,11 +123,11 @@ const AccessControlModal: React.FC<AccessControlModalProps> = ({ guests, onUpdat
                           const newRole = e.target.value as UserRole;
                           let newPermissions = { ...guest, role: newRole };
                           if (newRole === 'Admin') {
-                            newPermissions = { ...newPermissions, canViewFleet: true, canViewDelivery: true, canViewLedger: true, canViewFinancials: true };
+                            newPermissions = { ...newPermissions, canEdit: true, canViewFleet: true, canViewDelivery: true, canViewLedger: true, canViewFinancials: true };
                           } else if (newRole === 'Editor') {
-                            newPermissions = { ...newPermissions, canViewFleet: true, canViewDelivery: true, canViewLedger: true, canViewFinancials: false };
+                            newPermissions = { ...newPermissions, canEdit: true, canViewFleet: true, canViewDelivery: true, canViewLedger: true, canViewFinancials: false };
                           } else {
-                            newPermissions = { ...newPermissions, canViewFleet: true, canViewDelivery: true, canViewLedger: false, canViewFinancials: false };
+                            newPermissions = { ...newPermissions, canEdit: false, canViewFleet: true, canViewDelivery: true, canViewLedger: false, canViewFinancials: false };
                           }
                           setLocalGuests(localGuests.map(g => g.email === guest.email ? newPermissions : g));
                         }}

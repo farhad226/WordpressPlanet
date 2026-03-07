@@ -30,6 +30,7 @@ export type UserRole = 'Admin' | 'Editor' | 'Viewer';
 export interface GuestAccess {
   email: string;
   role: UserRole;
+  canEdit: boolean;
   canViewFleet: boolean;
   canViewDelivery: boolean;
   canViewLedger: boolean;
