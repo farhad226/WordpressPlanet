@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Plus, Trash2, Shield, Eye, EyeOff } from 'lucide-react';
+import { X, Plus, Trash2, Shield, Eye, EyeOff, Link as LinkIcon, CheckCircle2, Mail } from 'lucide-react';
 import { GuestAccess } from '../types';
 
 interface AccessControlModalProps {
@@ -11,6 +11,7 @@ interface AccessControlModalProps {
 const AccessControlModal: React.FC<AccessControlModalProps> = ({ guests, onUpdate, onClose }) => {
   const [localGuests, setLocalGuests] = useState<GuestAccess[]>(guests || []);
   const [newEmail, setNewEmail] = useState('');
+  const [copiedLink, setCopiedLink] = useState(false);
 
   const handleAddGuest = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +46,18 @@ const AccessControlModal: React.FC<AccessControlModalProps> = ({ guests, onUpdat
     onUpdate(localGuests);
   };
 
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
+
+  const handleSendInvite = (email: string) => {
+    const subject = encodeURIComponent("Access Granted: WP Team Dashboard");
+    const body = encodeURIComponent(`Hello,\n\nYou have been granted access to the WP Team Dashboard.\n\nLogin URL: ${window.location.origin}\nUsername: ${email}\nPassword: [Please click 'Join Team' on the login page to create your password]\n\nBest regards,\nAdmin`);
+    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+  };
+
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
       <div className="bg-[#0a0a0a] border border-white/10 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl">
@@ -54,13 +67,22 @@ const AccessControlModal: React.FC<AccessControlModalProps> = ({ guests, onUpdat
               <Shield className="w-5 h-5 text-purple-400" />
             </div>
             <div>
-              <h2 className="text-lg font-black text-white uppercase tracking-widest">Access Control</h2>
+              <h2 className="text-lg font-black text-white uppercase tracking-widest">Manage Guests</h2>
               <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Manage guest viewer permissions</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-colors">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={handleCopyLink}
+              className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[10px] font-black uppercase tracking-widest text-gray-300 transition-colors"
+            >
+              {copiedLink ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <LinkIcon className="w-3.5 h-3.5" />}
+              {copiedLink ? 'Copied!' : 'Copy App Link'}
+            </button>
+            <button onClick={onClose} className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         <div className="p-6 space-y-6">
@@ -92,9 +114,23 @@ const AccessControlModal: React.FC<AccessControlModalProps> = ({ guests, onUpdat
                 <div key={guest.email} className="bg-white/[0.02] border border-white/5 rounded-xl p-4 flex flex-col gap-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-black text-white">{guest.email}</span>
-                    <button onClick={() => handleRemoveGuest(guest.email)} className="p-1.5 text-gray-500 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => handleSendInvite(guest.email)} 
+                        className="flex items-center gap-1.5 px-2 py-1.5 text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors text-[9px] font-black uppercase tracking-widest"
+                        title="Send Invite Email"
+                      >
+                        <Mail className="w-3.5 h-3.5" />
+                        Email
+                      </button>
+                      <button 
+                        onClick={() => handleRemoveGuest(guest.email)} 
+                        className="p-1.5 text-gray-500 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors"
+                        title="Remove Guest"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                   
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">

@@ -771,10 +771,10 @@ const App: React.FC = () => {
                 <button 
                   onClick={() => setIsAccessModalOpen(true)}
                   className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 px-3 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all group/access"
-                  title="Access Control"
+                  title="Manage Guest Access"
                 >
                   <Shield className="w-3 h-3 group-hover/access:scale-110 transition-transform" />
-                  Access
+                  Manage Guests
                 </button>
               )}
               {isAdmin && (
