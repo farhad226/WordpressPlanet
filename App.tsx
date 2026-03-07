@@ -193,10 +193,10 @@ const App: React.FC = () => {
 
   const isUpdateOverdue = (member: TeamMember) => {
     if (member.progress >= 100) return false;
-    const rule = getUpdateRule(member.pageCount);
+    const targetHours = member.syncTargetHours || getUpdateRule(member.pageCount).hours;
     const assigned = new Date(member.assignedDate);
     const diffInHours = (currentTime.getTime() - assigned.getTime()) / (1000 * 60 * 60);
-    return diffInHours > rule.hours;
+    return diffInHours > targetHours;
   };
 
   const urgentNotifications = useMemo(() => {
@@ -646,7 +646,22 @@ const App: React.FC = () => {
                         </div>
                         <div>
                           <h3 className="text-sm font-black text-white">{member.name}</h3>
-                          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tight">{member.projectName}</p>
+                          <div className="flex flex-col gap-0.5 mt-0.5">
+                            <input 
+                              type="text" 
+                              value={member.projectName} 
+                              onChange={(e) => handleUpdateField(member.id, 'projectName', e.target.value)} 
+                              className="bg-transparent border-none p-0 text-[10px] text-gray-400 font-bold uppercase tracking-tight focus:ring-0 w-full hover:bg-white/10 rounded transition-all"
+                            />
+                            {isAdmin && (
+                              <input 
+                                type="text" 
+                                value={member.projectUrl} 
+                                onChange={(e) => handleUpdateField(member.id, 'projectUrl', e.target.value)} 
+                                className="bg-transparent border-none p-0 text-[9px] text-purple-500/70 font-bold uppercase tracking-tight focus:ring-0 w-full hover:bg-white/10 rounded transition-all"
+                              />
+                            )}
+                          </div>
                         </div>
                       </div>
                       <button onClick={() => initiateDelete(member)} className="p-2 text-gray-600 hover:text-rose-500 transition-colors">
@@ -667,6 +682,32 @@ const App: React.FC = () => {
                         <p className="text-sm font-black text-purple-400">${member.projectValue.toLocaleString()}</p>
                       </div>
                     </div>
+
+                    {isAdmin && (
+                      <div className="mb-4 p-2 bg-white/[0.03] border border-white/10 rounded-xl flex items-center justify-between">
+                        <div className="flex flex-col">
+                          <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Sync Protocol</span>
+                          <div className="flex items-center gap-1">
+                            <input 
+                              type="number" 
+                              value={member.syncTargetHours || getUpdateRule(member.pageCount).hours} 
+                              onChange={(e) => handleUpdateField(member.id, 'syncTargetHours', parseInt(e.target.value) || 0)} 
+                              className="bg-transparent border-none p-0 text-[10px] font-black text-purple-400 focus:ring-0 w-8"
+                            />
+                            <span className="text-[9px] font-black uppercase text-purple-400">H Target</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <input 
+                            type="number" 
+                            value={member.pageCount} 
+                            onChange={(e) => handleUpdateField(member.id, 'pageCount', parseInt(e.target.value) || 0)} 
+                            className="bg-white/5 border-none p-1 text-[10px] font-black text-white focus:ring-0 w-10 text-center rounded"
+                          />
+                          <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Units</span>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
@@ -730,9 +771,20 @@ const App: React.FC = () => {
                                 </div>
                                 <div className="flex flex-col">
                                   <input type="text" value={member.name} onChange={(e) => handleUpdateField(member.id, 'name', e.target.value)} className="bg-transparent border-none p-0 font-black text-white text-sm focus:ring-0 w-full hover:bg-white/10 rounded px-2 -ml-2 transition-all" />
-                                  <div className="flex items-center gap-1.5 mt-0.5">
-                                    <span className="text-[10px] text-gray-500 font-bold truncate max-w-[150px]">{member.projectUrl}</span>
-                                    <ExternalLink className="w-3 h-3 text-gray-600" />
+                                  <div className="flex items-center gap-1.5 mt-0.5 group/url">
+                                    {isAdmin ? (
+                                      <input 
+                                        type="text" 
+                                        value={member.projectUrl} 
+                                        onChange={(e) => handleUpdateField(member.id, 'projectUrl', e.target.value)} 
+                                        className="bg-transparent border-none p-0 text-[10px] text-gray-500 font-bold focus:ring-0 w-full hover:bg-white/10 rounded px-1 -ml-1 transition-all"
+                                      />
+                                    ) : (
+                                      <span className="text-[10px] text-gray-500 font-bold truncate max-w-[150px]">{member.projectUrl}</span>
+                                    )}
+                                    <a href={member.projectUrl} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                                      <ExternalLink className="w-3 h-3 text-gray-600 hover:text-purple-400 transition-colors" />
+                                    </a>
                                   </div>
                                 </div>
                               </div>
@@ -756,9 +808,33 @@ const App: React.FC = () => {
                             <td className="px-5 py-6 text-center">
                               <div className="flex flex-col items-center gap-1.5">
                                 <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${overdue ? 'bg-amber-500/20 border-amber-500/50 text-amber-500 animate-pulse' : 'bg-white/5 text-gray-500 border-white/10 group-hover/tr:text-purple-400 group-hover/tr:border-purple-500/20'}`}>
-                                  {rule.label}
+                                  {isAdmin ? (
+                                    <div className="flex items-center gap-1">
+                                      <input 
+                                        type="number" 
+                                        value={member.syncTargetHours || rule.hours} 
+                                        onChange={(e) => handleUpdateField(member.id, 'syncTargetHours', parseInt(e.target.value) || 0)} 
+                                        className="bg-transparent border-none p-0 text-[10px] font-black text-center focus:ring-0 w-8"
+                                      />
+                                      <span>H TARGET</span>
+                                    </div>
+                                  ) : (
+                                    member.syncTargetHours ? `${member.syncTargetHours}H TARGET` : rule.label
+                                  )}
                                 </div>
-                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-tighter">{member.pageCount} UNITS</span>
+                                <div className="flex items-center gap-1">
+                                  {isAdmin ? (
+                                    <input 
+                                      type="number" 
+                                      value={member.pageCount} 
+                                      onChange={(e) => handleUpdateField(member.id, 'pageCount', parseInt(e.target.value) || 0)} 
+                                      className="bg-transparent border-none p-0 text-[10px] font-black text-gray-500 uppercase tracking-tighter focus:ring-0 w-8 text-center hover:bg-white/10 rounded transition-all"
+                                    />
+                                  ) : (
+                                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-tighter">{member.pageCount}</span>
+                                  )}
+                                  <span className="text-[10px] font-black text-gray-500 uppercase tracking-tighter">UNITS</span>
+                                </div>
                               </div>
                             </td>
 

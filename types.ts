@@ -10,6 +10,7 @@ export interface TeamMember {
   projectUrl: string;
   progress: number; // 0 to 100
   themeColor: string; // Tailwind color class prefix (e.g., 'purple', 'blue', 'emerald')
+  syncTargetHours?: number; // Optional override for sync protocol target hours
 }
 
 export interface HistoricalProject extends TeamMember {
