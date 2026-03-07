@@ -215,6 +215,7 @@ const App: React.FC = () => {
 
   const urgentNotifications = useMemo(() => {
     return members.filter(member => {
+      if (member.isDelivered) return false;
       const remaining = getTimeRemaining(member.deliveryDate);
       const isUrgent = remaining.totalHours > 0 && remaining.totalHours <= 51;
       const isOverdue = remaining.isOverdue;
@@ -229,11 +230,12 @@ const App: React.FC = () => {
   }, [members, currentTime]);
 
   const deliveryStreamCount = useMemo(() => {
-    return members.filter(m => m.progress >= 85).length;
+    return members.filter(m => m.isDelivered).length;
   }, [members]);
 
   const criticalProjects = useMemo(() => {
     return members.filter(member => {
+      if (member.isDelivered) return false;
       const remaining = getTimeRemaining(member.deliveryDate);
       const overdue = isUpdateOverdue(member);
       const nearDeadline = remaining.totalHours > 0 && remaining.totalHours <= 51;
@@ -331,8 +333,10 @@ const App: React.FC = () => {
 
   const filteredAndSortedMembers = useMemo(() => {
     let base = members;
-    if (activeTab === 'delivery') {
-      base = members.filter(m => m.progress >= 85);
+    if (activeTab === 'fleet') {
+      base = members.filter(m => !m.isDelivered);
+    } else if (activeTab === 'delivery') {
+      base = members.filter(m => m.isDelivered);
     }
 
     const filtered = base.filter(member => {
@@ -362,6 +366,18 @@ const App: React.FC = () => {
   }, [members, searchQuery, sortField, sortOrder, activeTab]);
 
   const totalValue = members.reduce((sum, m) => sum + (Number(m.projectValue) || 0), 0);
+  const deliveredTotalValue = members.filter(m => m.isDelivered).reduce((sum, m) => sum + (Number(m.projectValue) || 0), 0);
+  
+  const deliveredThisMonthValue = useMemo(() => {
+    const currentMonth = currentTime.getMonth();
+    const currentYear = currentTime.getFullYear();
+    return members.filter(m => {
+      if (!m.isDelivered) return false;
+      const deliveryDate = new Date(m.deliveryDate);
+      return deliveryDate.getMonth() === currentMonth && deliveryDate.getFullYear() === currentYear;
+    }).reduce((sum, m) => sum + (Number(m.projectValue) || 0), 0);
+  }, [members, currentTime]);
+
   const avgProgress = members.length > 0 
     ? Math.round(members.reduce((sum, m) => sum + (Number(m.progress) || 0), 0) / members.length)
     : 0;
@@ -779,11 +795,19 @@ const App: React.FC = () => {
         {activeTab !== 'ledger' ? (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 mb-8">
-              {[
-                { label: 'FLEET', value: members.length, icon: Users, color: 'purple' },
-                { label: 'LIQUIDITY', value: `$${totalValue.toLocaleString()}`, icon: DollarSign, color: 'emerald' },
-                { label: 'PROGRESS', value: `${avgProgress}%`, icon: TrendingUp, color: 'blue' }
-              ].map((stat, i) => (
+              {(activeTab === 'fleet' ? 
+                [
+                  { label: 'FLEET', value: members.filter(m => !m.isDelivered).length, icon: Users, color: 'purple' },
+                  { label: 'LIQUIDITY', value: `$${(totalValue - deliveredTotalValue).toLocaleString()}`, icon: DollarSign, color: 'emerald' },
+                  { label: 'PROGRESS', value: `${avgProgress}%`, icon: TrendingUp, color: 'blue' }
+                ]
+               : 
+                [
+                  { label: 'DELIVERED PROJECTS', value: deliveryStreamCount, icon: Rocket, color: 'purple' },
+                  { label: 'TOTAL DELIVERED VALUE', value: `$${deliveredTotalValue.toLocaleString()}`, icon: DollarSign, color: 'emerald' },
+                  { label: 'DELIVERED THIS MONTH', value: `$${deliveredThisMonthValue.toLocaleString()}`, icon: TrendingUp, color: 'blue' }
+                ]
+              ).map((stat, i) => (
                 <GlassCard key={i} className={`p-4 md:p-5 border-l-4 border-l-${stat.color}-500 hover:translate-y-[-4px] transition-all group/card`}>
                   <div className="flex items-center gap-4">
                     <div className={`p-2 md:p-2.5 bg-${stat.color}-500/10 rounded-lg group-hover/card:scale-110 transition-all`}>
@@ -927,7 +951,7 @@ const App: React.FC = () => {
                     <tbody className="divide-y divide-white/[0.04]">
                       {filteredAndSortedMembers.map((member) => {
                         const isCritical = criticalProjects.some(p => p.id === member.id);
-                        const isDeliveryMove = member.progress >= 85;
+                        const isDeliveryMove = member.progress >= 85 && !member.isDelivered;
                         const overdue = isUpdateOverdue(member);
                         const rule = getUpdateRule(member.pageCount);
                         const remaining = getTimeRemaining(member.deliveryDate);
@@ -976,6 +1000,12 @@ const App: React.FC = () => {
                                     <div className="flex items-center gap-1 mt-1">
                                       <Rocket className="w-2.5 h-2.5 text-purple-500 animate-bounce" />
                                       <span className="text-[8px] font-black text-purple-500 uppercase tracking-tighter">Delivery Priority</span>
+                                    </div>
+                                  )}
+                                  {member.isDelivered && (
+                                    <div className="flex items-center gap-1 mt-1">
+                                      <CheckCircle2 className="w-2.5 h-2.5 text-emerald-500" />
+                                      <span className="text-[8px] font-black text-emerald-500 uppercase tracking-tighter">Delivered</span>
                                     </div>
                                   )}
                                 </div>
@@ -1077,7 +1107,7 @@ const App: React.FC = () => {
                               <div className="flex flex-col gap-3 group/progress-bar">
                                 <div className="flex justify-between items-center">
                                   <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 transition-colors group-hover/progress-bar:text-purple-400">
-                                    {member.progress >= 100 ? 'DEPLOYED' : (member.progress >= 85 ? 'FINAL POLISH' : 'BUILDING')}
+                                    {member.isDelivered ? 'DELIVERED' : (member.progress >= 100 ? 'DEPLOYED' : (member.progress >= 85 ? 'FINAL POLISH' : 'BUILDING'))}
                                   </span>
                                   <div className={`px-3 py-2 rounded-xl ${getBgColorClass(member.themeColor)} text-white font-black font-mono text-xs flex items-center justify-center gap-1 shadow-2xl border border-white/30 transition-all hover:scale-110 min-w-[65px]`}>
                                     <input 
@@ -1093,6 +1123,22 @@ const App: React.FC = () => {
                                 <div className="w-full bg-white/[0.08] rounded-full h-2 overflow-hidden ring-1 ring-white/10 shadow-inner">
                                   <div className={`h-full bg-gradient-to-r ${getColorClass(member.themeColor)} transition-all duration-1000 shadow-[0_0_15px_rgba(168,85,247,0.4)]`} style={{ width: `${member.progress}%` }} />
                                 </div>
+                                {isAdmin && member.progress >= 100 && !member.isDelivered && (
+                                  <button
+                                    onClick={() => handleUpdateField(member.id, 'isDelivered', true)}
+                                    className="mt-1 w-full py-1.5 bg-purple-500/20 hover:bg-purple-500/40 border border-purple-500/30 rounded-lg text-[9px] font-black text-purple-400 uppercase tracking-widest transition-all"
+                                  >
+                                    Mark Delivered
+                                  </button>
+                                )}
+                                {isAdmin && member.isDelivered && (
+                                  <button
+                                    onClick={() => handleUpdateField(member.id, 'isDelivered', false)}
+                                    className="mt-1 w-full py-1.5 bg-gray-500/10 hover:bg-gray-500/20 border border-gray-500/20 rounded-lg text-[9px] font-black text-gray-400 uppercase tracking-widest transition-all"
+                                  >
+                                    Revert to WIP
+                                  </button>
+                                )}
                               </div>
                             </td>
 
