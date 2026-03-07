@@ -43,14 +43,17 @@ import {
   TrendingDown,
   BarChart,
   RefreshCw,
-  Database
+  Database,
+  Lock,
+  Shield
 } from 'lucide-react';
-import { TeamMember, SortField, HistoricalProject, User, UserStorageData } from './types';
+import { TeamMember, SortField, HistoricalProject, User, UserStorageData, GuestAccess } from './types';
 import GlassCard from './components/GlassCard';
 import AddMemberModal from './components/AddMemberModal';
 import DeleteConfirmModal from './components/DeleteConfirmModal';
 import EditLogoModal from './components/EditLogoModal';
 import AuthModal from './components/AuthModal';
+import AccessControlModal from './components/AccessControlModal';
 import { SyncService } from './services/SyncService';
 import { supabase } from './services/supabase';
 import { SEED_MEMBERS } from './seedData';
@@ -111,16 +114,54 @@ const App: React.FC = () => {
   const [copyStatus, setCopyStatus] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
 
+  const [guests, setGuests] = useState<GuestAccess[]>([]);
+  const [guestPermissions, setGuestPermissions] = useState<GuestAccess | null>(null);
+  const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (guestPermissions) {
+      if (activeTab === 'fleet' && !guestPermissions.canViewFleet) {
+        setActiveTab(guestPermissions.canViewDelivery ? 'delivery' : (guestPermissions.canViewLedger ? 'ledger' : 'fleet'));
+      } else if (activeTab === 'delivery' && !guestPermissions.canViewDelivery) {
+        setActiveTab(guestPermissions.canViewFleet ? 'fleet' : (guestPermissions.canViewLedger ? 'ledger' : 'fleet'));
+      } else if (activeTab === 'ledger' && !guestPermissions.canViewLedger) {
+        setActiveTab(guestPermissions.canViewFleet ? 'fleet' : (guestPermissions.canViewDelivery ? 'delivery' : 'fleet'));
+      }
+    }
+  }, [guestPermissions, activeTab]);
+
   // 1. DATA INITIALIZATION: Connect Auth ID to Central Data Node
   useEffect(() => {
     const initializeUserNode = async () => {
       if (currentUser) {
         setIsSyncing(true);
         try {
-          const cloudData = await SyncService.fetchUserData(currentUser.email);
-          setMembers(cloudData.members);
-          setHistory(cloudData.history);
-          setLogoUrl(cloudData.logoUrl || DEFAULT_LOGO_URL);
+          const isAdmin = currentUser.email === 'farhadhossain6920@gmail.com';
+          
+          if (isAdmin) {
+            const cloudData = await SyncService.fetchUserData(currentUser.email);
+            setMembers(cloudData.members);
+            setHistory(cloudData.history);
+            setLogoUrl(cloudData.logoUrl || DEFAULT_LOGO_URL);
+            setGuests(cloudData.guests || []);
+            setGuestPermissions(null);
+          } else {
+            const adminData = await SyncService.fetchUserData('farhadhossain6920@gmail.com');
+            const guestAccess = adminData.guests?.find(g => g.email === currentUser.email);
+            
+            if (guestAccess) {
+              setMembers(adminData.members);
+              setHistory(adminData.history);
+              setLogoUrl(adminData.logoUrl || DEFAULT_LOGO_URL);
+              setGuestPermissions(guestAccess);
+            } else {
+              const cloudData = await SyncService.fetchUserData(currentUser.email);
+              setMembers(cloudData.members);
+              setHistory(cloudData.history);
+              setLogoUrl(cloudData.logoUrl || DEFAULT_LOGO_URL);
+              setGuestPermissions(null);
+            }
+          }
         } catch (error) {
           console.error("Failed to sync with cloud node:", error);
         } finally {
@@ -134,13 +175,13 @@ const App: React.FC = () => {
 
   // 2. CENTRAL PERSISTENCE: Push updates to Cloud Store on change
   const saveToCloud = useCallback(async () => {
-    if (currentUser && !isSyncing) {
+    if (currentUser && !isSyncing && !guestPermissions) {
       setIsCloudSaving(true);
-      const data: UserStorageData = { members, history, logoUrl };
+      const data: UserStorageData = { members, history, logoUrl, guests };
       await SyncService.saveUserData(currentUser.email, data);
       setIsCloudSaving(false);
     }
-  }, [members, history, logoUrl, currentUser, isSyncing]);
+  }, [members, history, logoUrl, guests, currentUser, isSyncing, guestPermissions]);
 
   useEffect(() => {
     const timeout = setTimeout(saveToCloud, 1000); // Debounce saves
@@ -189,8 +230,10 @@ const App: React.FC = () => {
   };
 
   const getTimeRemaining = (deliveryDate: string) => {
+    if (!deliveryDate) return { days: 0, hours: 0, totalHours: 0, isOverdue: false };
     const delivery = new Date(deliveryDate);
     const diff = delivery.getTime() - currentTime.getTime();
+    if (isNaN(diff)) return { days: 0, hours: 0, totalHours: 0, isOverdue: false };
     if (diff <= 0) return { days: 0, hours: 0, totalHours: 0, isOverdue: true };
     const totalHours = diff / (1000 * 60 * 60);
     const days = Math.floor(totalHours / 24);
@@ -204,11 +247,14 @@ const App: React.FC = () => {
     // Manual control takes precedence
     if (member.nextUpdateDate) {
       const nextUpdate = new Date(member.nextUpdateDate);
-      return currentTime.getTime() > nextUpdate.getTime();
+      if (!isNaN(nextUpdate.getTime())) {
+        return currentTime.getTime() > nextUpdate.getTime();
+      }
     }
 
     const targetHours = member.syncTargetHours || getUpdateRule(member.pageCount).hours;
     const assigned = new Date(member.assignedDate);
+    if (isNaN(assigned.getTime())) return false;
     const diffInHours = (currentTime.getTime() - assigned.getTime()) / (1000 * 60 * 60);
     return diffInHours > targetHours;
   };
@@ -244,6 +290,21 @@ const App: React.FC = () => {
     });
   }, [members, currentTime]);
 
+  const [ledgerMonthFilter, setLedgerMonthFilter] = useState<string>('All');
+
+  const availableMonths = useMemo(() => {
+    const months = new Set<string>();
+    history.forEach(item => {
+      if (item.isDelivered && item.deliveryDate) {
+        const date = new Date(item.deliveryDate);
+        if (!isNaN(date.getTime())) {
+          months.add(date.toLocaleString('default', { month: 'short', year: 'numeric' }));
+        }
+      }
+    });
+    return Array.from(months).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+  }, [history]);
+
   const ledgerStats = useMemo(() => {
     const groups: Record<string, { 
       name: string, 
@@ -256,6 +317,23 @@ const App: React.FC = () => {
     }> = {};
     
     history.forEach(item => {
+      let itemMonthYear = '';
+      if (item.isDelivered && item.deliveryDate) {
+        const dDate = new Date(item.deliveryDate);
+        if (!isNaN(dDate.getTime())) {
+          itemMonthYear = dDate.toLocaleString('default', { month: 'short', year: 'numeric' });
+        }
+      } else {
+        const aDate = new Date(item.assignedDate);
+        if (!isNaN(aDate.getTime())) {
+          itemMonthYear = aDate.toLocaleString('default', { month: 'short', year: 'numeric' });
+        }
+      }
+
+      if (ledgerMonthFilter !== 'All' && (!item.isDelivered || itemMonthYear !== ledgerMonthFilter)) {
+        return; // If filtering by month, ONLY show delivered projects for that specific month
+      }
+
       if (!groups[item.name]) {
         groups[item.name] = { 
           name: item.name, 
@@ -268,8 +346,7 @@ const App: React.FC = () => {
         };
       }
       
-      const date = new Date(item.assignedDate);
-      const monthYear = date.toLocaleString('default', { month: 'short', year: 'numeric' });
+      const monthYear = itemMonthYear || 'Unknown';
       
       if (!groups[item.name].monthlyBreakdown[monthYear]) {
         groups[item.name].monthlyBreakdown[monthYear] = { projects: 0, revenue: 0 };
@@ -286,7 +363,7 @@ const App: React.FC = () => {
         name: item.projectName,
         value: item.projectValue,
         progress: item.progress,
-        date: item.assignedDate
+        date: item.isDelivered ? item.deliveryDate : item.assignedDate
       });
     });
 
@@ -550,16 +627,18 @@ const App: React.FC = () => {
         <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10 animate-in slide-in-from-top-6 duration-700 ease-out">
           <div className="flex items-center gap-4 md:gap-5 group">
             <div 
-              onClick={() => setIsEditLogoModalOpen(true)}
-              className="p-1 bg-white/5 border border-white/10 rounded-2xl shadow-2xl hover:scale-110 transition-all duration-500 relative overflow-hidden backdrop-blur-md cursor-pointer group/logo shrink-0"
+              onClick={() => isAdmin && setIsEditLogoModalOpen(true)}
+              className={`p-1 bg-white/5 border border-white/10 rounded-2xl shadow-2xl transition-all duration-500 relative overflow-hidden backdrop-blur-md shrink-0 ${isAdmin ? 'hover:scale-110 cursor-pointer group/logo' : ''}`}
             >
               <div 
-                className="w-12 h-12 md:w-14 md:h-14 rounded-xl animate-float transition-all group-hover/logo:brightness-50"
+                className={`w-12 h-12 md:w-14 md:h-14 rounded-xl animate-float transition-all ${isAdmin ? 'group-hover/logo:brightness-50' : ''}`}
                 style={{ backgroundImage: `url('${logoUrl}')`, backgroundSize: 'cover', backgroundPosition: 'center' }}
               />
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity">
-                <Edit2 className="w-5 h-5 text-white drop-shadow-lg" />
-              </div>
+              {isAdmin && (
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity">
+                  <Edit2 className="w-5 h-5 text-white drop-shadow-lg" />
+                </div>
+              )}
             </div>
             <div className="min-w-0">
               <h1 className="text-xl md:text-3xl lg:text-4xl font-black bg-gradient-to-r from-white via-white/90 to-purple-400 bg-clip-text text-transparent tracking-tight truncate">
@@ -688,14 +767,26 @@ const App: React.FC = () => {
                   </button>
                 </div>
               )}
-              <button 
-                onClick={() => setIsAddModalOpen(true)}
-                className="flex items-center gap-2 bg-gradient-to-br from-purple-700 to-indigo-900 hover:from-purple-600 hover:to-indigo-800 text-white px-4 md:px-5 py-2 md:py-2.5 rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-widest transition-all shadow-lg active:scale-95 group/add"
-              >
-                <Plus className="w-3 h-3 md:w-3.5 md:h-3.5 group-hover/add:rotate-90 transition-transform" />
-                <span className="hidden sm:inline">Initialize</span>
-                <span className="sm:hidden">Add</span>
-              </button>
+              {isAdmin && (
+                <button 
+                  onClick={() => setIsAccessModalOpen(true)}
+                  className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 px-3 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all group/access"
+                  title="Access Control"
+                >
+                  <Shield className="w-3 h-3 group-hover/access:scale-110 transition-transform" />
+                  Access
+                </button>
+              )}
+              {isAdmin && (
+                <button 
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="flex items-center gap-2 bg-gradient-to-br from-purple-700 to-indigo-900 hover:from-purple-600 hover:to-indigo-800 text-white px-4 md:px-5 py-2 md:py-2.5 rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-widest transition-all shadow-lg active:scale-95 group/add"
+                >
+                  <Plus className="w-3 h-3 md:w-3.5 md:h-3.5 group-hover/add:rotate-90 transition-transform" />
+                  <span className="hidden sm:inline">Initialize</span>
+                  <span className="sm:hidden">Add</span>
+                </button>
+              )}
 
               <button 
                 onClick={handleLogout}
@@ -764,32 +855,38 @@ const App: React.FC = () => {
 
         {/* TAB NAVIGATION */}
         <div className="flex items-center gap-1 mb-8 p-1 bg-white/[0.02] border border-white/10 rounded-2xl w-full sm:w-fit backdrop-blur-xl animate-in slide-in-from-left-4 duration-500 overflow-x-auto no-scrollbar">
-          <button 
-            onClick={() => setActiveTab('fleet')}
-            className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeTab === 'fleet' ? 'bg-white/10 text-white shadow-xl' : 'text-gray-600 hover:text-gray-400'}`}
-          >
-            <Activity className="w-3 h-3 md:w-3.5 md:h-3.5" />
-            Fleet Operations
-          </button>
-          <button 
-            onClick={() => setActiveTab('delivery')}
-            className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] transition-all relative whitespace-nowrap ${activeTab === 'delivery' ? 'bg-purple-600 text-white shadow-[0_0_20px_rgba(147,51,234,0.3)]' : 'text-gray-600 hover:text-gray-400'}`}
-          >
-            <Rocket className="w-3 h-3 md:w-3.5 md:h-3.5" />
-            Delivery Stream
-            {deliveryStreamCount > 0 && (
-              <span className={`absolute -top-1 -right-1 w-4 h-4 md:w-5 md:h-5 rounded-lg flex items-center justify-center text-[8px] md:text-[9px] font-black border-2 border-[#050505] transition-colors ${activeTab === 'delivery' ? 'bg-white text-purple-600' : 'bg-gray-800 text-gray-500'}`}>
-                {deliveryStreamCount}
-              </span>
-            )}
-          </button>
-          <button 
-            onClick={() => setActiveTab('ledger')}
-            className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeTab === 'ledger' ? 'bg-emerald-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'text-gray-600 hover:text-gray-400'}`}
-          >
-            <History className="w-3 h-3 md:w-3.5 md:h-3.5" />
-            Member Ledger
-          </button>
+          {(!guestPermissions || guestPermissions.canViewFleet) && (
+            <button 
+              onClick={() => setActiveTab('fleet')}
+              className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeTab === 'fleet' ? 'bg-white/10 text-white shadow-xl' : 'text-gray-600 hover:text-gray-400'}`}
+            >
+              <Activity className="w-3 h-3 md:w-3.5 md:h-3.5" />
+              Fleet Operations
+            </button>
+          )}
+          {(!guestPermissions || guestPermissions.canViewDelivery) && (
+            <button 
+              onClick={() => setActiveTab('delivery')}
+              className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] transition-all relative whitespace-nowrap ${activeTab === 'delivery' ? 'bg-purple-600 text-white shadow-[0_0_20px_rgba(147,51,234,0.3)]' : 'text-gray-600 hover:text-gray-400'}`}
+            >
+              <Rocket className="w-3 h-3 md:w-3.5 md:h-3.5" />
+              Delivery Stream
+              {deliveryStreamCount > 0 && (
+                <span className={`absolute -top-1 -right-1 w-4 h-4 md:w-5 md:h-5 rounded-lg flex items-center justify-center text-[8px] md:text-[9px] font-black border-2 border-[#050505] transition-colors ${activeTab === 'delivery' ? 'bg-white text-purple-600' : 'bg-gray-800 text-gray-500'}`}>
+                  {deliveryStreamCount}
+                </span>
+              )}
+            </button>
+          )}
+          {(!guestPermissions || guestPermissions.canViewLedger) && (
+            <button 
+              onClick={() => setActiveTab('ledger')}
+              className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeTab === 'ledger' ? 'bg-emerald-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'text-gray-600 hover:text-gray-400'}`}
+            >
+              <History className="w-3 h-3 md:w-3.5 md:h-3.5" />
+              Member Ledger
+            </button>
+          )}
         </div>
 
         {activeTab !== 'ledger' ? (
@@ -798,14 +895,14 @@ const App: React.FC = () => {
               {(activeTab === 'fleet' ? 
                 [
                   { label: 'FLEET', value: members.filter(m => !m.isDelivered).length, icon: Users, color: 'purple' },
-                  { label: 'LIQUIDITY', value: `$${(totalValue - deliveredTotalValue).toLocaleString()}`, icon: DollarSign, color: 'emerald' },
+                  { label: 'LIQUIDITY', value: (!guestPermissions || guestPermissions.canViewFinancials) ? `$${(totalValue - deliveredTotalValue).toLocaleString()}` : 'HIDDEN', icon: DollarSign, color: 'emerald' },
                   { label: 'PROGRESS', value: `${avgProgress}%`, icon: TrendingUp, color: 'blue' }
                 ]
                : 
                 [
                   { label: 'DELIVERED PROJECTS', value: deliveryStreamCount, icon: Rocket, color: 'purple' },
-                  { label: 'TOTAL DELIVERED VALUE', value: `$${deliveredTotalValue.toLocaleString()}`, icon: DollarSign, color: 'emerald' },
-                  { label: 'DELIVERED THIS MONTH', value: `$${deliveredThisMonthValue.toLocaleString()}`, icon: TrendingUp, color: 'blue' }
+                  { label: 'TOTAL DELIVERED VALUE', value: (!guestPermissions || guestPermissions.canViewFinancials) ? `$${deliveredTotalValue.toLocaleString()}` : 'HIDDEN', icon: DollarSign, color: 'emerald' },
+                  { label: 'DELIVERED THIS MONTH', value: (!guestPermissions || guestPermissions.canViewFinancials) ? `$${deliveredThisMonthValue.toLocaleString()}` : 'HIDDEN', icon: TrendingUp, color: 'blue' }
                 ]
               ).map((stat, i) => (
                 <GlassCard key={i} className={`p-4 md:p-5 border-l-4 border-l-${stat.color}-500 hover:translate-y-[-4px] transition-all group/card`}>
@@ -874,7 +971,11 @@ const App: React.FC = () => {
                       </div>
                       <div className="space-y-1 text-right">
                         <p className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Value</p>
-                        <p className="text-sm font-black text-purple-400">${member.projectValue.toLocaleString()}</p>
+                        {(!guestPermissions || guestPermissions.canViewFinancials) ? (
+                          <p className="text-sm font-black text-purple-400">${member.projectValue.toLocaleString()}</p>
+                        ) : (
+                          <Lock className="w-3 h-3 text-gray-600 ml-auto" />
+                        )}
                       </div>
                     </div>
 
@@ -1055,7 +1156,7 @@ const App: React.FC = () => {
                                       className="bg-transparent border-none p-0 text-[10px] font-black text-gray-500 uppercase tracking-tighter focus:ring-0 w-8 text-center hover:bg-white/10 rounded transition-all"
                                     />
                                   ) : (
-                                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-tighter">{member.pageCount}</span>
+                                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-tighter">{member.pageCount || 0}</span>
                                   )}
                                   <span className="text-[10px] font-black text-gray-500 uppercase tracking-tighter">UNITS</span>
                                 </div>
@@ -1091,10 +1192,16 @@ const App: React.FC = () => {
 
                             <td className="px-5 py-6">
                               <div className="flex flex-col gap-3">
-                                <div className="flex items-center text-white font-black text-2xl tracking-tighter group/val">
-                                  <span className="text-purple-500 mr-1 text-sm font-bold">$</span>
-                                  <input type="number" value={member.projectValue} onChange={(e) => handleUpdateField(member.id, 'projectValue', parseFloat(e.target.value) || 0)} className="bg-transparent border-none p-0 focus:ring-0 w-24 text-base transition-colors group-hover/tr:text-purple-400" />
-                                </div>
+                                {(!guestPermissions || guestPermissions.canViewFinancials) ? (
+                                  <div className="flex items-center text-white font-black text-2xl tracking-tighter group/val">
+                                    <span className="text-purple-500 mr-1 text-sm font-bold">$</span>
+                                    <input type="number" value={member.projectValue} onChange={(e) => handleUpdateField(member.id, 'projectValue', parseFloat(e.target.value) || 0)} className="bg-transparent border-none p-0 focus:ring-0 w-24 text-base transition-colors group-hover/tr:text-purple-400" />
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center text-gray-600 font-black text-2xl tracking-tighter">
+                                    <Lock className="w-5 h-5" />
+                                  </div>
+                                )}
                                 <div className="flex items-center text-[9px] text-purple-400 font-black uppercase tracking-widest bg-white/[0.04] border border-white/10 px-2.5 py-1 rounded-xl w-fit group/units hover:bg-white/[0.08] transition-all">
                                   <Layers className="w-3 h-3 mr-1.5" />
                                   <input type="number" value={member.pageCount} onChange={(e) => handleUpdateField(member.id, 'pageCount', parseInt(e.target.value) || 0)} className="bg-transparent border-none p-0 focus:ring-0 w-8 text-center" />
@@ -1173,6 +1280,19 @@ const App: React.FC = () => {
               </div>
               
               <div className="flex items-center gap-3 w-full md:w-auto">
+                <div className="relative">
+                  <select
+                    value={ledgerMonthFilter}
+                    onChange={(e) => setLedgerMonthFilter(e.target.value)}
+                    className="appearance-none pl-4 pr-10 py-2.5 bg-emerald-500/[0.02] border border-emerald-500/10 rounded-xl focus:outline-none focus:border-emerald-500/40 backdrop-blur-3xl transition-all text-xs font-black text-emerald-400 uppercase tracking-widest cursor-pointer"
+                  >
+                    <option value="All" className="bg-gray-900">All Time</option>
+                    {availableMonths.map(month => (
+                      <option key={month} value={month} className="bg-gray-900">{month}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500/50 pointer-events-none" />
+                </div>
                 <div className="relative group/ledger-search w-full md:w-64">
                   <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-500/50 w-3.5 h-3.5 transition-colors group-focus-within/ledger-search:text-emerald-500" />
                   <input 
@@ -1222,12 +1342,18 @@ const App: React.FC = () => {
                       </div>
 
                       <div className="grid grid-cols-3 gap-2 md:gap-4 mb-6 md:mb-8">
-                        <div className="bg-white/[0.02] p-3 md:p-4 rounded-2xl border border-white/5 group-hover:bg-white/[0.04] transition-colors">
-                          <p className="text-[7px] md:text-[8px] font-black text-gray-600 uppercase tracking-[0.2em] mb-1 md:mb-1.5 flex items-center gap-1 md:gap-1.5">
-                            <DollarSign className="w-2 h-2 text-emerald-500" /> <span className="hidden xs:inline">Liquidated</span><span className="xs:hidden">Val</span>
-                          </p>
-                          <p className="text-sm md:text-xl font-black text-white font-mono tracking-tighter truncate">${stat.totalValue.toLocaleString()}</p>
-                        </div>
+                        {(!guestPermissions || guestPermissions.canViewFinancials) ? (
+                          <div className="bg-white/[0.02] p-3 md:p-4 rounded-2xl border border-white/5 group-hover:bg-white/[0.04] transition-colors">
+                            <p className="text-[7px] md:text-[8px] font-black text-gray-600 uppercase tracking-[0.2em] mb-1 md:mb-1.5 flex items-center gap-1 md:gap-1.5">
+                              <DollarSign className="w-2 h-2 text-emerald-500" /> <span className="hidden xs:inline">Liquidated</span><span className="xs:hidden">Val</span>
+                            </p>
+                            <p className="text-sm md:text-xl font-black text-white font-mono tracking-tighter truncate">${stat.totalValue.toLocaleString()}</p>
+                          </div>
+                        ) : (
+                          <div className="bg-white/[0.02] p-3 md:p-4 rounded-2xl border border-white/5 group-hover:bg-white/[0.04] transition-colors flex items-center justify-center">
+                            <Lock className="w-4 h-4 text-gray-600" />
+                          </div>
+                        )}
                         <div className="bg-white/[0.02] p-3 md:p-4 rounded-2xl border border-white/5 group-hover:bg-white/[0.04] transition-colors">
                           <p className="text-[7px] md:text-[8px] font-black text-gray-600 uppercase tracking-[0.2em] mb-1 md:mb-1.5 flex items-center gap-1 md:gap-1.5">
                             <Package className="w-2 h-2 text-blue-500" /> <span className="hidden xs:inline">Projects</span><span className="xs:hidden">Proj</span>
@@ -1258,12 +1384,18 @@ const App: React.FC = () => {
                                   <span className="text-[7px] md:text-[8px] font-bold text-gray-600 uppercase tracking-widest">{data.projects} Project{data.projects !== 1 ? 's' : ''}</span>
                                 </div>
                                 <div className="text-right">
-                                  <span className="text-[10px] md:text-[11px] font-black text-purple-400 font-mono tracking-tighter">${data.revenue.toLocaleString()}</span>
-                                  <div className="flex items-center gap-1 mt-0.5 justify-end">
-                                    <div className="h-0.5 w-6 md:w-8 bg-purple-500/20 rounded-full overflow-hidden">
-                                      <div className="h-full bg-purple-500" style={{ width: `${Math.min(100, (data.revenue / (stat.totalValue || 1)) * 100 * 2)}%` }}></div>
-                                    </div>
-                                  </div>
+                                  {(!guestPermissions || guestPermissions.canViewFinancials) ? (
+                                    <>
+                                      <span className="text-[10px] md:text-[11px] font-black text-purple-400 font-mono tracking-tighter">${data.revenue.toLocaleString()}</span>
+                                      <div className="flex items-center gap-1 mt-0.5 justify-end">
+                                        <div className="h-0.5 w-6 md:w-8 bg-purple-500/20 rounded-full overflow-hidden">
+                                          <div className="h-full bg-purple-500" style={{ width: `${Math.min(100, (data.revenue / (stat.totalValue || 1)) * 100 * 2)}%` }}></div>
+                                        </div>
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <Lock className="w-3 h-3 text-gray-600 inline-block" />
+                                  )}
                                 </div>
                               </div>
                             ))}
@@ -1288,7 +1420,11 @@ const App: React.FC = () => {
                                   </div>
                                 </div>
                                  <div className="text-right flex items-center gap-2 md:gap-3 shrink-0">
-                                   <p className="text-[10px] md:text-[11px] font-black text-emerald-400/80 font-mono group-hover/proj:text-emerald-400 transition-colors">${proj.value.toLocaleString()}</p>
+                                   {(!guestPermissions || guestPermissions.canViewFinancials) ? (
+                                     <p className="text-[10px] md:text-[11px] font-black text-emerald-400/80 font-mono group-hover/proj:text-emerald-400 transition-colors">${proj.value.toLocaleString()}</p>
+                                   ) : (
+                                     <Lock className="w-3 h-3 text-gray-600" />
+                                   )}
                                    {isAdmin && (
                                      <button 
                                        onClick={() => setHistory(prev => prev.filter(h => h.id !== proj.id))}
@@ -1397,6 +1533,16 @@ const App: React.FC = () => {
           onClose={() => setIsAddModalOpen(false)} 
           onSubmit={handleAddMember} 
           onBulkSubmit={handleBulkAddMembers}
+        />
+      )}
+      {isAccessModalOpen && (
+        <AccessControlModal
+          guests={guests}
+          onUpdate={(newGuests) => {
+            setGuests(newGuests);
+            setIsAccessModalOpen(false);
+          }}
+          onClose={() => setIsAccessModalOpen(false)}
         />
       )}
       {isEditLogoModalOpen && <EditLogoModal initialUrl={logoUrl} onClose={() => setIsEditLogoModalOpen(false)} onUpdate={(newUrl) => { setLogoUrl(newUrl); setIsEditLogoModalOpen(false); }} />}

@@ -25,10 +25,19 @@ export interface User {
   password?: string; // Only used for local storage auth simulation
 }
 
+export interface GuestAccess {
+  email: string;
+  canViewFleet: boolean;
+  canViewDelivery: boolean;
+  canViewLedger: boolean;
+  canViewFinancials: boolean;
+}
+
 export interface UserStorageData {
   members: TeamMember[];
   history: HistoricalProject[];
   logoUrl: string;
+  guests?: GuestAccess[];
 }
 
 export type SortField = 'name' | 'projectValue' | 'progress' | 'deliveryDate' | 'projectName' | 'assignedDate';
