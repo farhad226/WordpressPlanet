@@ -46,12 +46,12 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ onClose, onSubmit }) =>
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
-      <GlassCard className="w-full max-w-lg overflow-hidden shadow-[0_0_80px_rgba(168,85,247,0.1)] border-white/20">
-        <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+      <GlassCard className="w-full max-w-lg max-h-[90vh] overflow-y-auto custom-scrollbar shadow-[0_0_80px_rgba(168,85,247,0.1)] border-white/20">
+        <div className="p-4 md:p-6 border-b border-white/10 flex justify-between items-center bg-white/5 sticky top-0 z-10 backdrop-blur-xl">
           <div>
-            <h2 className="text-xl font-bold text-white tracking-tight uppercase">Project Initialization</h2>
-            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Assign member, project, and set timelines.</p>
+            <h2 className="text-lg md:text-xl font-bold text-white tracking-tight uppercase">Project Initialization</h2>
+            <p className="text-[8px] md:text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Assign member, project, and set timelines.</p>
           </div>
           <button 
             onClick={onClose}
@@ -61,12 +61,12 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ onClose, onSubmit }) =>
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-6">
           <div className="space-y-4">
             {/* Member & Project */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[10px] font-black text-gray-500 mb-2 uppercase tracking-widest flex items-center gap-2">
+                <label className="block text-[9px] md:text-[10px] font-black text-gray-500 mb-2 uppercase tracking-widest flex items-center gap-2">
                   <User className="w-3 h-3 text-purple-400" /> Member Name
                 </label>
                 <input 
@@ -79,7 +79,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ onClose, onSubmit }) =>
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-gray-500 mb-2 uppercase tracking-widest flex items-center gap-2">
+                <label className="block text-[9px] md:text-[10px] font-black text-gray-500 mb-2 uppercase tracking-widest flex items-center gap-2">
                   <Briefcase className="w-3 h-3 text-purple-400" /> Project Name
                 </label>
                 <input 
@@ -94,9 +94,9 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ onClose, onSubmit }) =>
             </div>
 
             {/* Timelines */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[10px] font-black text-gray-500 mb-2 uppercase tracking-widest flex items-center gap-2">
+                <label className="block text-[9px] md:text-[10px] font-black text-gray-500 mb-2 uppercase tracking-widest flex items-center gap-2">
                   <Calendar className="w-3 h-3 text-purple-400" /> Assigned Date
                 </label>
                 <input 
@@ -108,7 +108,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ onClose, onSubmit }) =>
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-gray-500 mb-2 uppercase tracking-widest flex items-center gap-2">
+                <label className="block text-[9px] md:text-[10px] font-black text-gray-500 mb-2 uppercase tracking-widest flex items-center gap-2">
                   <Clock className="w-3 h-3 text-rose-400" /> Delivery Date
                 </label>
                 <input 
@@ -122,9 +122,9 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ onClose, onSubmit }) =>
             </div>
 
             {/* Finance & Scale */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[10px] font-black text-gray-500 mb-2 uppercase tracking-widest">Value (USD)</label>
+                <label className="block text-[9px] md:text-[10px] font-black text-gray-500 mb-2 uppercase tracking-widest">Value (USD)</label>
                 <div className="relative">
                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-500 text-xs font-black">$</span>
                    <input 
@@ -138,7 +138,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ onClose, onSubmit }) =>
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-black text-gray-500 mb-2 uppercase tracking-widest">Scope (Units)</label>
+                <label className="block text-[9px] md:text-[10px] font-black text-gray-500 mb-2 uppercase tracking-widest">Scope (Units)</label>
                 <input 
                   required
                   type="number"
@@ -152,17 +152,17 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ onClose, onSubmit }) =>
 
             {/* IDENTITY THEME SELECTION IMPROVED */}
             <div>
-              <label className="block text-[10px] font-black text-gray-500 mb-3 uppercase tracking-[0.2em] flex items-center gap-2">
+              <label className="block text-[9px] md:text-[10px] font-black text-gray-500 mb-3 uppercase tracking-[0.2em] flex items-center gap-2">
                 <Palette className="w-3 h-3 text-purple-400" /> Identity Theme Protocol
               </label>
-              <div className="flex flex-wrap gap-4 p-4 bg-white/[0.02] border border-white/10 rounded-2xl justify-center items-center">
+              <div className="flex flex-wrap gap-3 md:gap-4 p-3 md:p-4 bg-white/[0.02] border border-white/10 rounded-2xl justify-center items-center">
                 {THEME_COLORS.map(color => (
                   <button
                     key={color.value}
                     type="button"
                     onClick={() => setFormData({...formData, themeColor: color.value})}
                     className={`
-                      group relative w-12 h-12 rounded-2xl border border-white/10 transition-all duration-300 flex items-center justify-center
+                      group relative w-10 h-10 md:w-12 md:h-12 rounded-2xl border border-white/10 transition-all duration-300 flex items-center justify-center
                       ${color.class} 
                       ${formData.themeColor === color.value 
                         ? 'ring-2 ring-purple-500 ring-offset-4 ring-offset-black scale-110 shadow-[0_0_20px_rgba(168,85,247,0.4)]' 
@@ -171,7 +171,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ onClose, onSubmit }) =>
                     title={color.name}
                   >
                     {formData.themeColor === color.value && (
-                      <Check className="w-6 h-6 text-white drop-shadow-md animate-in zoom-in duration-200" />
+                      <Check className="w-5 h-5 md:w-6 md:h-6 text-white drop-shadow-md animate-in zoom-in duration-200" />
                     )}
                     <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-[8px] font-black text-white px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none uppercase tracking-widest">
                       {color.name}
@@ -182,7 +182,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ onClose, onSubmit }) =>
             </div>
 
             <div>
-              <label className="block text-[10px] font-black text-gray-500 mb-2 uppercase tracking-widest flex items-center gap-2">
+              <label className="block text-[9px] md:text-[10px] font-black text-gray-500 mb-2 uppercase tracking-widest flex items-center gap-2">
                 <Link className="w-3 h-3 text-purple-400" /> Workspace Node URL
               </label>
               <input 
@@ -196,23 +196,29 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ onClose, onSubmit }) =>
             </div>
           </div>
 
-          <div className="pt-4 flex gap-4">
+          <div className="pt-4 flex flex-col sm:flex-row gap-3 md:gap-4">
             <button 
               type="button" 
               onClick={onClose} 
-              className="flex-1 px-6 py-4 border border-white/10 rounded-xl hover:bg-white/5 text-gray-500 font-black text-[10px] uppercase tracking-widest transition-all"
+              className="flex-1 px-6 py-3 md:py-4 border border-white/10 rounded-xl hover:bg-white/5 text-gray-500 font-black text-[9px] md:text-[10px] uppercase tracking-widest transition-all"
             >
               Abort
             </button>
             <button 
               type="submit" 
-              className="flex-1 px-6 py-4 bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-500 hover:to-indigo-600 rounded-xl font-black text-[10px] uppercase tracking-widest text-white shadow-xl shadow-purple-900/40 transition-all active:scale-95"
+              className="flex-1 px-6 py-3 md:py-4 bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-500 hover:to-indigo-600 rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-widest text-white shadow-xl shadow-purple-900/40 transition-all active:scale-95"
             >
               Initialize Sync
             </button>
           </div>
         </form>
       </GlassCard>
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar { height: 4px; width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.01); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(168, 85, 247, 0.2); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(168, 85, 247, 0.4); }
+      `}</style>
     </div>
   );
 };

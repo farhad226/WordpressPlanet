@@ -199,27 +199,27 @@ const AuthModal: React.FC<AuthModalProps> = ({ onAuthSuccess }) => {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full opacity-20" style={{ backgroundImage: 'radial-gradient(circle, #ffffff11 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
       </div>
 
-      <GlassCard className="w-full max-w-[440px] overflow-hidden border-white/10 shadow-[0_30px_100px_rgba(0,0,0,0.9)] relative z-10 animate-in zoom-in-95 fade-in duration-500 ring-1 ring-white/5">
-        <div className="p-8 sm:p-10">
-          <div className="flex flex-col items-center mb-10 text-center">
-            <div className="relative mb-6">
+      <GlassCard className="w-full max-w-[440px] max-h-[90vh] overflow-y-auto custom-scrollbar border-white/10 shadow-[0_30px_100px_rgba(0,0,0,0.9)] relative z-10 animate-in zoom-in-95 fade-in duration-500 ring-1 ring-white/5">
+        <div className="p-6 sm:p-10">
+          <div className="flex flex-col items-center mb-8 sm:mb-10 text-center">
+            <div className="relative mb-4 sm:mb-6">
               <div className="absolute inset-0 bg-purple-500 blur-2xl opacity-20 animate-pulse"></div>
-              <div className="relative w-20 h-20 bg-gradient-to-tr from-purple-600 to-indigo-600 rounded-[2.5rem] flex items-center justify-center shadow-2xl ring-1 ring-white/30 animate-float transform hover:rotate-12 transition-transform duration-500">
-                <Fingerprint className="w-10 h-10 text-white" />
+              <div className="relative w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-tr from-purple-600 to-indigo-600 rounded-[2rem] sm:rounded-[2.5rem] flex items-center justify-center shadow-2xl ring-1 ring-white/30 animate-float transform hover:rotate-12 transition-transform duration-500">
+                <Fingerprint className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
               </div>
             </div>
             
-            <h2 className="text-4xl font-black text-white tracking-tight uppercase leading-none">
+            <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight uppercase leading-none">
               WP <span className="bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">TEAM</span>
             </h2>
-            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.4em] mt-3 opacity-60">
+            <p className="text-[8px] sm:text-[10px] text-gray-500 font-bold uppercase tracking-[0.4em] mt-2 sm:mt-3 opacity-60">
               {isLogin ? 'Authorization Required' : 'Create Access Profile'}
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
             <div className="space-y-2 group">
-              <label className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 px-1 transition-colors duration-300 ${isFocused === 'email' ? 'text-purple-400' : 'text-gray-500'}`}>
+              <label className={`text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 px-1 transition-colors duration-300 ${isFocused === 'email' ? 'text-purple-400' : 'text-gray-500'}`}>
                 <Mail className={`w-3 h-3 transition-transform ${isFocused === 'email' ? 'scale-110' : ''}`} /> Terminal ID
               </label>
               <div className="relative">
@@ -228,7 +228,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onAuthSuccess }) => {
                   placeholder="name@planet.wp"
                   onFocus={() => setIsFocused('email')}
                   onBlur={() => setIsFocused(null)}
-                  className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-5 py-4 focus:outline-none focus:border-purple-500/50 focus:bg-white/[0.06] focus:ring-4 focus:ring-purple-500/5 transition-all text-sm font-medium text-white placeholder:text-gray-700 shadow-inner"
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-4 sm:px-5 py-3 sm:py-4 focus:outline-none focus:border-purple-500/50 focus:bg-white/[0.06] focus:ring-4 focus:ring-purple-500/5 transition-all text-xs sm:text-sm font-medium text-white placeholder:text-gray-700 shadow-inner"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -237,7 +237,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onAuthSuccess }) => {
 
             <div className="space-y-2 group">
               <div className="flex items-center justify-between px-1">
-                <label className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-colors duration-300 ${isFocused === 'password' ? 'text-purple-400' : 'text-gray-500'}`}>
+                <label className={`text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-colors duration-300 ${isFocused === 'password' ? 'text-purple-400' : 'text-gray-500'}`}>
                   <Lock className={`w-3 h-3 transition-transform ${isFocused === 'password' ? 'scale-110' : ''}`} /> Security Key
                 </label>
                 {isLogin && (
@@ -245,7 +245,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onAuthSuccess }) => {
                     type="button"
                     disabled={isLoading || resetCooldown > 0}
                     onClick={handleResetPassword}
-                    className="text-[9px] font-black text-purple-500 uppercase tracking-widest hover:text-purple-400 transition-colors disabled:opacity-50"
+                    className="text-[8px] sm:text-[9px] font-black text-purple-500 uppercase tracking-widest hover:text-purple-400 transition-colors disabled:opacity-50"
                   >
                     {resetCooldown > 0 ? `Wait ${resetCooldown}s` : 'Forgot?'}
                   </button>
@@ -257,7 +257,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onAuthSuccess }) => {
                   placeholder="••••••••"
                   onFocus={() => setIsFocused('password')}
                   onBlur={() => setIsFocused(null)}
-                  className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-5 py-4 focus:outline-none focus:border-purple-500/50 focus:bg-white/[0.06] focus:ring-4 focus:ring-purple-500/5 transition-all text-sm font-medium text-white placeholder:text-gray-700 shadow-inner"
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-4 sm:px-5 py-3 sm:py-4 focus:outline-none focus:border-purple-500/50 focus:bg-white/[0.06] focus:ring-4 focus:ring-purple-500/5 transition-all text-xs sm:text-sm font-medium text-white placeholder:text-gray-700 shadow-inner"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -269,7 +269,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onAuthSuccess }) => {
                 <button 
                   type="button" 
                   onClick={() => setShowSync(!showSync)}
-                  className="text-[9px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-2 hover:text-emerald-400 transition-colors"
+                  className="text-[8px] sm:text-[9px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-2 hover:text-emerald-400 transition-colors"
                 >
                   <CloudLightning className="w-3 h-3" />
                   {showSync ? "Hide Portability Options" : "Advanced: Sync Existing Node?"}
@@ -278,7 +278,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onAuthSuccess }) => {
                   <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
                     <textarea 
                       placeholder="Paste your Node Sync String here to restore your data from another browser..."
-                      className="w-full bg-emerald-500/[0.03] border border-emerald-500/10 rounded-2xl p-4 focus:outline-none focus:border-emerald-500/40 transition-all text-[10px] font-mono text-emerald-100 placeholder:text-emerald-900 h-24 custom-scrollbar resize-none"
+                      className="w-full bg-emerald-500/[0.03] border border-emerald-500/10 rounded-2xl p-4 focus:outline-none focus:border-emerald-500/40 transition-all text-[9px] sm:text-[10px] font-mono text-emerald-100 placeholder:text-emerald-900 h-24 custom-scrollbar resize-none"
                       value={syncCode}
                       onChange={(e) => setSyncCode(e.target.value)}
                     />
@@ -288,19 +288,19 @@ const AuthModal: React.FC<AuthModalProps> = ({ onAuthSuccess }) => {
             )}
 
             {error && (
-              <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex flex-col gap-3 animate-in slide-in-from-top-2 duration-300">
+              <div className="p-3 sm:p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex flex-col gap-3 animate-in slide-in-from-top-2 duration-300">
                 <div className="flex items-center gap-3">
                   <div className="p-1.5 bg-rose-500/20 rounded-lg">
                     <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
                   </div>
-                  <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest leading-tight">{error}</p>
+                  <p className="text-[9px] sm:text-[10px] font-black text-rose-500 uppercase tracking-widest leading-tight">{error}</p>
                 </div>
                 {error.includes('confirm your email') && (
                   <button 
                     type="button"
                     disabled={isLoading || resendCooldown > 0}
                     onClick={handleResendConfirmation}
-                    className="text-[9px] font-black text-white bg-rose-500/20 hover:bg-rose-500/40 py-2 rounded-xl transition-colors uppercase tracking-widest disabled:opacity-50"
+                    className="text-[8px] sm:text-[9px] font-black text-white bg-rose-500/20 hover:bg-rose-500/40 py-2 rounded-xl transition-colors uppercase tracking-widest disabled:opacity-50"
                   >
                     {resendCooldown > 0 ? `Wait ${resendCooldown}s to Resend` : 'Resend Confirmation Link'}
                   </button>
@@ -311,7 +311,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onAuthSuccess }) => {
             <button 
               type="submit"
               disabled={isLoading || resendCooldown > 0}
-              className="w-full group relative py-4 bg-white text-black font-black text-[11px] uppercase tracking-[0.3em] rounded-2xl shadow-xl shadow-purple-900/10 transition-all hover:bg-purple-500 hover:text-white active:scale-[0.97] flex items-center justify-center gap-3 mt-4 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full group relative py-3.5 sm:py-4 bg-white text-black font-black text-[10px] sm:text-[11px] uppercase tracking-[0.3em] rounded-2xl shadow-xl shadow-purple-900/10 transition-all hover:bg-purple-500 hover:text-white active:scale-[0.97] flex items-center justify-center gap-3 mt-4 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <span className="relative z-10 flex items-center gap-2">
@@ -336,10 +336,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ onAuthSuccess }) => {
             </button>
           </form>
 
-          <div className="mt-10 pt-8 border-t border-white/10 text-center">
+          <div className="mt-8 sm:mt-10 pt-6 sm:pt-8 border-t border-white/10 text-center">
             <button 
               onClick={() => { setIsLogin(!isLogin); setError(''); setShowSync(false); setSyncCode(''); }}
-              className="group text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center justify-center gap-2 mx-auto"
+              className="group text-[9px] sm:text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center justify-center gap-2 mx-auto"
             >
               <span className="opacity-50 group-hover:opacity-80 transition-opacity">
                 {isLogin ? "Require new node access?" : "Already possess an active link?"}
@@ -351,8 +351,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ onAuthSuccess }) => {
           </div>
         </div>
         
-        <div className="py-4 bg-white/[0.02] border-t border-white/5 text-center">
-           <p className="text-[8px] font-black text-gray-700 uppercase tracking-[0.4em] opacity-40">Biometric Verification Enabled • WP.T V5.2</p>
+        <div className="py-3 sm:py-4 bg-white/[0.02] border-t border-white/5 text-center">
+           <p className="text-[7px] sm:text-[8px] font-black text-gray-700 uppercase tracking-[0.4em] opacity-40">Biometric Verification Enabled • WP.T V5.2</p>
         </div>
       </GlassCard>
 

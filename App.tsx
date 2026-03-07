@@ -446,186 +446,248 @@ const App: React.FC = () => {
       </div>
 
       <div className="max-w-[1850px] mx-auto px-6 py-6 relative z-10">
-        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-10 animate-in slide-in-from-top-6 duration-700 ease-out">
-          <div className="flex items-center gap-5 group">
+        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10 animate-in slide-in-from-top-6 duration-700 ease-out">
+          <div className="flex items-center gap-4 md:gap-5 group">
             <div 
               onClick={() => setIsEditLogoModalOpen(true)}
-              className="p-1 bg-white/5 border border-white/10 rounded-2xl shadow-2xl hover:scale-110 transition-all duration-500 relative overflow-hidden backdrop-blur-md cursor-pointer group/logo"
+              className="p-1 bg-white/5 border border-white/10 rounded-2xl shadow-2xl hover:scale-110 transition-all duration-500 relative overflow-hidden backdrop-blur-md cursor-pointer group/logo shrink-0"
             >
               <div 
-                className="w-14 h-14 rounded-xl animate-float transition-all group-hover/logo:brightness-50"
+                className="w-12 h-12 md:w-14 md:h-14 rounded-xl animate-float transition-all group-hover/logo:brightness-50"
                 style={{ backgroundImage: `url('${logoUrl}')`, backgroundSize: 'cover', backgroundPosition: 'center' }}
               />
               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity">
                 <Edit2 className="w-5 h-5 text-white drop-shadow-lg" />
               </div>
             </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl lg:text-4xl font-black bg-gradient-to-r from-white via-white/90 to-purple-400 bg-clip-text text-transparent tracking-tight">
+            <div className="min-w-0">
+              <h1 className="text-xl md:text-3xl lg:text-4xl font-black bg-gradient-to-r from-white via-white/90 to-purple-400 bg-clip-text text-transparent tracking-tight truncate">
                 Wordpress Planet <span className="text-purple-500">(WP)</span> Team
               </h1>
-              <div className="flex flex-wrap items-center gap-4 mt-1">
-                <p className="text-gray-500 text-[11px] font-bold opacity-80 flex items-center gap-1.5 uppercase tracking-widest">
+              <div className="flex flex-wrap items-center gap-2 md:gap-4 mt-1">
+                <p className="text-gray-500 text-[9px] md:text-[11px] font-bold opacity-80 flex items-center gap-1.5 uppercase tracking-widest">
                   <span className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-ping-slow"></span>
                   Operations Command
                 </p>
-                <div className="h-3 w-px bg-white/10"></div>
+                <div className="hidden md:block h-3 w-px bg-white/10"></div>
                 <div className="flex items-center gap-2 group/profile cursor-default">
                   <UserIcon className="w-3 h-3 text-purple-400" />
-                  <span className="text-[10px] font-black text-gray-400 group-hover:text-purple-300 transition-colors truncate max-w-[150px]">{currentUser.email}</span>
+                  <span className="text-[9px] md:text-[10px] font-black text-gray-400 group-hover:text-purple-300 transition-colors truncate max-w-[100px] md:max-w-[150px]">{currentUser.email}</span>
                 </div>
-                <div className="h-3 w-px bg-white/10"></div>
+                <div className="hidden md:block h-3 w-px bg-white/10"></div>
                 <button 
                   onClick={() => setIsSyncModalOpen(true)}
-                  className={`flex items-center gap-2 px-3 py-1 border rounded-full transition-all group/sync ${isCloudSaving ? 'bg-purple-500/20 border-purple-500/40' : 'bg-emerald-500/10 border-emerald-500/20'}`}
+                  className={`flex items-center gap-2 px-2 md:px-3 py-1 border rounded-full transition-all group/sync ${isCloudSaving ? 'bg-purple-500/20 border-purple-500/40' : 'bg-emerald-500/10 border-emerald-500/20'}`}
                 >
-                  <CloudLightning className={`w-3 h-3 ${isCloudSaving ? 'text-purple-400 animate-spin' : 'text-emerald-400 animate-pulse'}`} />
-                  <span className={`text-[9px] font-black uppercase tracking-widest ${isCloudSaving ? 'text-purple-400' : 'text-emerald-400'}`}>
-                    {isCloudSaving ? 'Syncing...' : 'Central Node Linked'}
+                  <CloudLightning className={`w-2.5 h-2.5 md:w-3 md:h-3 ${isCloudSaving ? 'text-purple-400 animate-spin' : 'text-emerald-400 animate-pulse'}`} />
+                  <span className={`text-[8px] md:text-[9px] font-black uppercase tracking-widest ${isCloudSaving ? 'text-purple-400' : 'text-emerald-400'}`}>
+                    {isCloudSaving ? 'Syncing...' : 'Linked'}
                   </span>
                 </button>
               </div>
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
-            <div className="relative" ref={notifRef}>
-              <button 
-                onClick={() => setIsNotifOpen(!isNotifOpen)}
-                className={`p-3 rounded-xl border border-white/10 transition-all relative group/notif ${isNotifOpen ? 'bg-purple-500/10 border-purple-500/40' : 'bg-white/5 hover:bg-white/10'}`}
-              >
-                <Bell className={`w-5 h-5 transition-transform ${isNotifOpen ? 'text-purple-400 scale-110' : 'text-gray-500 group-hover/notif:text-white'}`} />
-                {urgentNotifications.length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-[10px] font-black flex items-center justify-center rounded-lg shadow-[0_0_15px_rgba(244,63,94,0.6)] animate-pulse">
-                    {urgentNotifications.length}
-                  </span>
-                )}
-              </button>
+          <div className="flex flex-wrap items-center gap-3 md:gap-4">
+            <div className="flex items-center gap-3">
+              <div className="relative" ref={notifRef}>
+                <button 
+                  onClick={() => setIsNotifOpen(!isNotifOpen)}
+                  className={`p-2.5 md:p-3 rounded-xl border border-white/10 transition-all relative group/notif ${isNotifOpen ? 'bg-purple-500/10 border-purple-500/40' : 'bg-white/5 hover:bg-white/10'}`}
+                >
+                  <Bell className={`w-4 h-4 md:w-5 md:h-5 transition-transform ${isNotifOpen ? 'text-purple-400 scale-110' : 'text-gray-500 group-hover/notif:text-white'}`} />
+                  {urgentNotifications.length > 0 && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 md:w-5 md:h-5 bg-rose-500 text-white text-[9px] md:text-[10px] font-black flex items-center justify-center rounded-lg shadow-[0_0_15px_rgba(244,63,94,0.6)] animate-pulse">
+                      {urgentNotifications.length}
+                    </span>
+                  )}
+                </button>
 
-              {isNotifOpen && (
-                <div className="absolute right-0 mt-3 w-80 bg-[#0a0a0a] border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-3xl overflow-hidden z-[100] animate-in zoom-in-95 duration-200 origin-top-right">
-                  <div className="p-4 border-b border-white/10 bg-white/[0.02] flex items-center justify-between">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Alert Center</span>
-                    <span className="text-[9px] font-bold text-purple-500 bg-purple-500/10 px-2 py-0.5 rounded-full">Real-time Scan</span>
-                  </div>
-                  <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
-                    {urgentNotifications.length > 0 ? (
-                      urgentNotifications.map(notif => (
-                        <div key={notif.id} className="p-4 border-b border-white/5 hover:bg-white/[0.03] transition-colors group/item">
-                          <div className="flex items-start gap-3">
-                            <div className={`mt-1 p-1.5 rounded-lg ${notif.isOverdue ? 'bg-rose-500/20' : 'bg-amber-500/20'}`}>
-                              <AlertTriangle className={`w-3.5 h-3.5 ${notif.isOverdue ? 'text-rose-500' : 'text-amber-500'}`} />
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-xs font-black text-white leading-tight group-hover/item:text-purple-400 transition-colors">
-                                {notif.projectName}
-                              </p>
-                              <p className="text-[10px] text-gray-500 font-bold mt-1 uppercase tracking-tight">
-                                Assigned: <span className="text-gray-300">{notif.memberName}</span>
-                              </p>
-                              <div className="mt-2 flex items-center justify-between">
-                                <span className={`text-[9px] font-black uppercase tracking-widest ${notif.isOverdue ? 'text-rose-500' : 'text-amber-500'}`}>
-                                  {notif.isOverdue ? 'CRITICAL BREACH' : `${Math.ceil(notif.hoursLeft)}H REMAINING`}
-                                </span>
-                                <Clock className="w-3 h-3 text-gray-700" />
+                {isNotifOpen && (
+                  <div className="absolute right-0 mt-3 w-72 md:w-80 bg-[#0a0a0a] border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-3xl overflow-hidden z-[100] animate-in zoom-in-95 duration-200 origin-top-right">
+                    <div className="p-4 border-b border-white/10 bg-white/[0.02] flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Alert Center</span>
+                      <span className="text-[9px] font-bold text-purple-500 bg-purple-500/10 px-2 py-0.5 rounded-full">Real-time Scan</span>
+                    </div>
+                    <div className="max-h-[300px] md:max-h-[400px] overflow-y-auto custom-scrollbar">
+                      {urgentNotifications.length > 0 ? (
+                        urgentNotifications.map(notif => (
+                          <div key={notif.id} className="p-4 border-b border-white/5 hover:bg-white/[0.03] transition-colors group/item">
+                            <div className="flex items-start gap-3">
+                              <div className={`mt-1 p-1.5 rounded-lg ${notif.isOverdue ? 'bg-rose-500/20' : 'bg-amber-500/20'}`}>
+                                <AlertTriangle className={`w-3.5 h-3.5 ${notif.isOverdue ? 'text-rose-500' : 'text-amber-500'}`} />
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-xs font-black text-white leading-tight group-hover/item:text-purple-400 transition-colors">
+                                  {notif.projectName}
+                                </p>
+                                <p className="text-[10px] text-gray-500 font-bold mt-1 uppercase tracking-tight">
+                                  Assigned: <span className="text-gray-300">{notif.memberName}</span>
+                                </p>
+                                <div className="mt-2 flex items-center justify-between">
+                                  <span className={`text-[9px] font-black uppercase tracking-widest ${notif.isOverdue ? 'text-rose-500' : 'text-amber-500'}`}>
+                                    {notif.isOverdue ? 'CRITICAL BREACH' : `${Math.ceil(notif.hoursLeft)}H REMAINING`}
+                                  </span>
+                                  <Clock className="w-3 h-3 text-gray-700" />
+                                </div>
                               </div>
                             </div>
                           </div>
+                        ))
+                      ) : (
+                        <div className="p-10 text-center flex flex-col items-center gap-3">
+                          <ShieldAlert className="w-10 h-10 text-gray-800" />
+                          <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest">No Critical Alerts</p>
                         </div>
-                      ))
-                    ) : (
-                      <div className="p-10 text-center flex flex-col items-center gap-3">
-                        <ShieldAlert className="w-10 h-10 text-gray-800" />
-                        <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest">No Critical Alerts</p>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
 
-            <div className="relative group/search">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-600 w-3.5 h-3.5" />
-              <input 
-                type="text" 
-                placeholder="Scan Node..."
-                className="pl-10 pr-4 py-2.5 bg-white/[0.02] border border-white/10 rounded-xl focus:outline-none focus:border-purple-500/40 backdrop-blur-3xl w-48 transition-all text-xs font-semibold"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+              <div className="relative group/search">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 w-3 h-3" />
+                <input 
+                  type="text" 
+                  placeholder="Scan..."
+                  className="pl-8 pr-3 py-2 bg-white/[0.02] border border-white/10 rounded-xl focus:outline-none focus:border-purple-500/40 backdrop-blur-3xl w-28 md:w-48 transition-all text-[10px] md:text-xs font-semibold"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
             </div>
             
-            <button 
-              onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center gap-2 bg-gradient-to-br from-purple-700 to-indigo-900 hover:from-purple-600 hover:to-indigo-800 text-white px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg active:scale-95 group/add"
-            >
-              <Plus className="w-3.5 h-3.5 group-hover/add:rotate-90 transition-transform" />
-              Initialize
-            </button>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setIsAddModalOpen(true)}
+                className="flex items-center gap-2 bg-gradient-to-br from-purple-700 to-indigo-900 hover:from-purple-600 hover:to-indigo-800 text-white px-4 md:px-5 py-2 md:py-2.5 rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-widest transition-all shadow-lg active:scale-95 group/add"
+              >
+                <Plus className="w-3 h-3 md:w-3.5 md:h-3.5 group-hover/add:rotate-90 transition-transform" />
+                <span className="hidden sm:inline">Initialize</span>
+                <span className="sm:hidden">Add</span>
+              </button>
 
-            <button 
-              onClick={handleLogout}
-              className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-xl hover:bg-rose-500 hover:text-white transition-all group/logout"
-              title="Terminate Session"
-            >
-              <LogOut className="w-5 h-5 transition-transform group-hover/logout:-translate-x-1" />
-            </button>
+              <button 
+                onClick={handleLogout}
+                className="p-2 md:p-3 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-xl hover:bg-rose-500 hover:text-white transition-all group/logout"
+                title="Terminate Session"
+              >
+                <LogOut className="w-4 h-4 md:w-5 md:h-5 transition-transform group-hover/logout:-translate-x-1" />
+              </button>
+            </div>
           </div>
         </header>
 
         {/* TAB NAVIGATION */}
-        <div className="flex items-center gap-1 mb-8 p-1 bg-white/[0.02] border border-white/10 rounded-2xl w-fit backdrop-blur-xl animate-in slide-in-from-left-4 duration-500">
+        <div className="flex items-center gap-1 mb-8 p-1 bg-white/[0.02] border border-white/10 rounded-2xl w-full sm:w-fit backdrop-blur-xl animate-in slide-in-from-left-4 duration-500 overflow-x-auto no-scrollbar">
           <button 
             onClick={() => setActiveTab('fleet')}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${activeTab === 'fleet' ? 'bg-white/10 text-white shadow-xl' : 'text-gray-600 hover:text-gray-400'}`}
+            className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeTab === 'fleet' ? 'bg-white/10 text-white shadow-xl' : 'text-gray-600 hover:text-gray-400'}`}
           >
-            <Activity className="w-3.5 h-3.5" />
+            <Activity className="w-3 h-3 md:w-3.5 md:h-3.5" />
             Fleet Operations
           </button>
           <button 
             onClick={() => setActiveTab('delivery')}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all relative ${activeTab === 'delivery' ? 'bg-purple-600 text-white shadow-[0_0_20px_rgba(147,51,234,0.3)]' : 'text-gray-600 hover:text-gray-400'}`}
+            className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] transition-all relative whitespace-nowrap ${activeTab === 'delivery' ? 'bg-purple-600 text-white shadow-[0_0_20px_rgba(147,51,234,0.3)]' : 'text-gray-600 hover:text-gray-400'}`}
           >
-            <Rocket className="w-3.5 h-3.5" />
+            <Rocket className="w-3 h-3 md:w-3.5 md:h-3.5" />
             Delivery Stream
             {deliveryStreamCount > 0 && (
-              <span className={`absolute -top-1 -right-1 w-5 h-5 rounded-lg flex items-center justify-center text-[9px] font-black border-2 border-[#050505] transition-colors ${activeTab === 'delivery' ? 'bg-white text-purple-600' : 'bg-gray-800 text-gray-500'}`}>
+              <span className={`absolute -top-1 -right-1 w-4 h-4 md:w-5 md:h-5 rounded-lg flex items-center justify-center text-[8px] md:text-[9px] font-black border-2 border-[#050505] transition-colors ${activeTab === 'delivery' ? 'bg-white text-purple-600' : 'bg-gray-800 text-gray-500'}`}>
                 {deliveryStreamCount}
               </span>
             )}
           </button>
           <button 
             onClick={() => setActiveTab('ledger')}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${activeTab === 'ledger' ? 'bg-emerald-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'text-gray-600 hover:text-gray-400'}`}
+            className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeTab === 'ledger' ? 'bg-emerald-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'text-gray-600 hover:text-gray-400'}`}
           >
-            <History className="w-3.5 h-3.5" />
+            <History className="w-3 h-3 md:w-3.5 md:h-3.5" />
             Member Ledger
           </button>
         </div>
 
         {activeTab !== 'ledger' ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 mb-8">
               {[
                 { label: 'FLEET', value: members.length, icon: Users, color: 'purple' },
                 { label: 'LIQUIDITY', value: `$${totalValue.toLocaleString()}`, icon: DollarSign, color: 'emerald' },
                 { label: 'PROGRESS', value: `${avgProgress}%`, icon: TrendingUp, color: 'blue' }
               ].map((stat, i) => (
-                <GlassCard key={i} className={`p-5 border-l-4 border-l-${stat.color}-500 hover:translate-y-[-4px] transition-all group/card`}>
+                <GlassCard key={i} className={`p-4 md:p-5 border-l-4 border-l-${stat.color}-500 hover:translate-y-[-4px] transition-all group/card`}>
                   <div className="flex items-center gap-4">
-                    <div className={`p-2.5 bg-${stat.color}-500/10 rounded-lg group-hover/card:scale-110 transition-all`}>
-                      <stat.icon className={`text-${stat.color}-400 w-5 h-5`} />
+                    <div className={`p-2 md:p-2.5 bg-${stat.color}-500/10 rounded-lg group-hover/card:scale-110 transition-all`}>
+                      <stat.icon className={`text-${stat.color}-400 w-4 h-4 md:w-5 md:h-5`} />
                     </div>
                     <div>
-                      <p className="text-gray-600 text-[8px] font-black uppercase tracking-widest mb-0.5">{stat.label}</p>
-                      <p className="text-2xl font-black text-white">{stat.value}</p>
+                      <p className="text-gray-600 text-[7px] md:text-[8px] font-black uppercase tracking-widest mb-0.5">{stat.label}</p>
+                      <p className="text-xl md:text-2xl font-black text-white">{stat.value}</p>
                     </div>
                   </div>
                 </GlassCard>
               ))}
             </div>
 
-            <GlassCard className="overflow-hidden shadow-2xl ring-1 ring-white/10 bg-white/[0.01]">
+            <div className="lg:hidden space-y-4 mb-8">
+              {filteredAndSortedMembers.map((member) => {
+                const isCritical = criticalProjects.some(p => p.id === member.id);
+                const overdue = isUpdateOverdue(member);
+                const remaining = getTimeRemaining(member.deliveryDate);
+                const isUrgent = remaining.totalHours <= 51 && !remaining.isOverdue;
+
+                return (
+                  <GlassCard key={member.id} className={`p-5 border-l-4 ${isCritical ? 'border-l-rose-500 bg-rose-500/5' : 'border-l-purple-500'}`}>
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${getColorClass(member.themeColor)} flex items-center justify-center font-black text-[10px] shadow-lg`}>
+                          {(member.name || '?').split(' ').map(n => n[0]).join('')}
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-black text-white">{member.name}</h3>
+                          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tight">{member.projectName}</p>
+                        </div>
+                      </div>
+                      <button onClick={() => initiateDelete(member)} className="p-2 text-gray-600 hover:text-rose-500 transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div className="space-y-1">
+                        <p className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Remaining</p>
+                        <div className={`flex items-center gap-2 px-2 py-1 rounded-lg border ${remaining.isOverdue ? 'bg-rose-500/10 border-rose-500/30 text-rose-500' : (isUrgent ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'bg-white/5 border-white/10 text-white')}`}>
+                          <Clock className="w-3 h-3" />
+                          <span className="text-xs font-black font-mono">{remaining.isOverdue ? 'OVERDUE' : `${remaining.days}d ${remaining.hours}h`}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-1 text-right">
+                        <p className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Value</p>
+                        <p className="text-sm font-black text-purple-400">${member.projectValue.toLocaleString()}</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Progress</span>
+                        <span className="text-[10px] font-black text-white">{member.progress}%</span>
+                      </div>
+                      <div className="w-full bg-white/[0.08] rounded-full h-1.5 overflow-hidden">
+                        <div className={`h-full bg-gradient-to-r ${getColorClass(member.themeColor)}`} style={{ width: `${member.progress}%` }} />
+                      </div>
+                    </div>
+                  </GlassCard>
+                );
+              })}
+              {filteredAndSortedMembers.length === 0 && (
+                <div className="py-10 text-center">
+                  <p className="text-gray-600 text-xs font-bold uppercase tracking-widest">No nodes found</p>
+                </div>
+              )}
+            </div>
+
+            <GlassCard className="hidden lg:block overflow-hidden shadow-2xl ring-1 ring-white/10 bg-white/[0.01]">
               <div className="overflow-x-auto custom-scrollbar">
                 {filteredAndSortedMembers.length > 0 ? (
                   <table className="w-full text-left border-collapse min-w-[1300px]">
@@ -812,21 +874,21 @@ const App: React.FC = () => {
               {ledgerStats.length > 0 ? (
                 ledgerStats.map((stat, i) => (
                   <GlassCard key={i} className="group relative overflow-hidden border-white/10 hover:border-emerald-500/30 transition-all duration-500 hover:shadow-[0_0_50px_rgba(16,185,129,0.1)] flex flex-col h-full">
-                    <div className="p-6 flex-1">
-                      <div className="flex items-center justify-between mb-8">
+                    <div className="p-4 md:p-6 flex-1">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-8">
                         <div className="flex items-center gap-4">
-                          <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${getColorClass(stat.color)} flex items-center justify-center font-black text-lg shadow-2xl group-hover:scale-110 transition-transform duration-500 border border-white/20`}>
+                          <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br ${getColorClass(stat.color)} flex items-center justify-center font-black text-base md:text-lg shadow-2xl group-hover:scale-110 transition-transform duration-500 border border-white/20 shrink-0`}>
                             {stat.name.split(' ').map(n => n[0]).join('')}
                           </div>
-                          <div>
-                            <h3 className="text-xl font-black text-white tracking-tight">{stat.name}</h3>
+                          <div className="min-w-0">
+                            <h3 className="text-lg md:text-xl font-black text-white tracking-tight truncate">{stat.name}</h3>
                             <div className="flex items-center gap-2 mt-1">
-                              <span className="text-[9px] text-emerald-500 font-black uppercase tracking-[0.2em] bg-emerald-500/10 px-2 py-0.5 rounded-lg">Verified Node</span>
-                              <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">• Total Workload Managed</span>
+                              <span className="text-[8px] md:text-[9px] text-emerald-500 font-black uppercase tracking-[0.2em] bg-emerald-500/10 px-2 py-0.5 rounded-lg whitespace-nowrap">Verified Node</span>
+                              <span className="hidden xs:inline text-[8px] md:text-[9px] text-gray-500 font-bold uppercase tracking-widest truncate">• Total Workload</span>
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-between sm:justify-end gap-3">
                           {isAdmin && (
                             <button 
                               onClick={() => initiateDeleteHistory(stat.name)}
@@ -836,31 +898,31 @@ const App: React.FC = () => {
                               <Trash2 className="w-4 h-4 transition-transform group-hover/del-hist:scale-110" />
                             </button>
                           )}
-                          <div className="hidden sm:flex flex-col items-end">
-                             <Award className="w-6 h-6 text-emerald-500 mb-1" />
+                          <div className="flex sm:flex-col items-center sm:items-end gap-2 sm:gap-0">
+                             <Award className="w-5 h-5 md:w-6 md:h-6 text-emerald-500 sm:mb-1" />
                              <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Performance Tier 1</span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-3 gap-4 mb-8">
-                        <div className="bg-white/[0.02] p-4 rounded-2xl border border-white/5 group-hover:bg-white/[0.04] transition-colors">
-                          <p className="text-[8px] font-black text-gray-600 uppercase tracking-[0.2em] mb-1.5 flex items-center gap-1.5">
-                            <DollarSign className="w-2 h-2 text-emerald-500" /> Total Liquidated
+                      <div className="grid grid-cols-3 gap-2 md:gap-4 mb-6 md:mb-8">
+                        <div className="bg-white/[0.02] p-3 md:p-4 rounded-2xl border border-white/5 group-hover:bg-white/[0.04] transition-colors">
+                          <p className="text-[7px] md:text-[8px] font-black text-gray-600 uppercase tracking-[0.2em] mb-1 md:mb-1.5 flex items-center gap-1 md:gap-1.5">
+                            <DollarSign className="w-2 h-2 text-emerald-500" /> <span className="hidden xs:inline">Liquidated</span><span className="xs:hidden">Val</span>
                           </p>
-                          <p className="text-xl font-black text-white font-mono tracking-tighter">${stat.totalValue.toLocaleString()}</p>
+                          <p className="text-sm md:text-xl font-black text-white font-mono tracking-tighter truncate">${stat.totalValue.toLocaleString()}</p>
                         </div>
-                        <div className="bg-white/[0.02] p-4 rounded-2xl border border-white/5 group-hover:bg-white/[0.04] transition-colors">
-                          <p className="text-[8px] font-black text-gray-600 uppercase tracking-[0.2em] mb-1.5 flex items-center gap-1.5">
-                            <Package className="w-2 h-2 text-blue-500" /> Axis Projects
+                        <div className="bg-white/[0.02] p-3 md:p-4 rounded-2xl border border-white/5 group-hover:bg-white/[0.04] transition-colors">
+                          <p className="text-[7px] md:text-[8px] font-black text-gray-600 uppercase tracking-[0.2em] mb-1 md:mb-1.5 flex items-center gap-1 md:gap-1.5">
+                            <Package className="w-2 h-2 text-blue-500" /> <span className="hidden xs:inline">Projects</span><span className="xs:hidden">Proj</span>
                           </p>
-                          <p className="text-xl font-black text-white font-mono tracking-tighter">{stat.projectsCount}</p>
+                          <p className="text-sm md:text-xl font-black text-white font-mono tracking-tighter">{stat.projectsCount}</p>
                         </div>
-                        <div className="bg-white/[0.02] p-4 rounded-2xl border border-white/5 group-hover:bg-white/[0.04] transition-colors">
-                          <p className="text-[8px] font-black text-gray-600 uppercase tracking-[0.2em] mb-1.5 flex items-center gap-1.5">
-                            <Zap className="w-2 h-2 text-purple-500" /> Avg. Sync
+                        <div className="bg-white/[0.02] p-3 md:p-4 rounded-2xl border border-white/5 group-hover:bg-white/[0.04] transition-colors">
+                          <p className="text-[7px] md:text-[8px] font-black text-gray-600 uppercase tracking-[0.2em] mb-1 md:mb-1.5 flex items-center gap-1 md:gap-1.5">
+                            <Zap className="w-2 h-2 text-purple-500" /> <span className="hidden xs:inline">Avg. Sync</span><span className="xs:hidden">Sync</span>
                           </p>
-                          <p className="text-xl font-black text-white font-mono tracking-tighter">{stat.avgProgress}%</p>
+                          <p className="text-sm md:text-xl font-black text-white font-mono tracking-tighter">{stat.avgProgress}%</p>
                         </div>
                       </div>
 
@@ -868,21 +930,21 @@ const App: React.FC = () => {
                         {/* Monthly Breakdown Section */}
                         <div className="space-y-4">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                            <span className="text-[9px] md:text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
                                <BarChart className="w-3 h-3 text-purple-500" /> Velocity Audit (Monthly)
                             </span>
                           </div>
                           <div className="space-y-2 max-h-[180px] overflow-y-auto custom-scrollbar pr-2">
                             {stat.sortedMonths.map(([month, data], idx) => (
-                              <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-purple-500/[0.02] border border-purple-500/10 hover:bg-purple-500/[0.05] transition-all group/month">
+                              <div key={idx} className="flex items-center justify-between p-2 md:p-3 rounded-xl bg-purple-500/[0.02] border border-purple-500/10 hover:bg-purple-500/[0.05] transition-all group/month">
                                 <div className="flex flex-col">
-                                  <span className="text-[10px] font-black text-white uppercase tracking-tight">{month}</span>
-                                  <span className="text-[8px] font-bold text-gray-600 uppercase tracking-widest">{data.projects} Project{data.projects !== 1 ? 's' : ''}</span>
+                                  <span className="text-[9px] md:text-[10px] font-black text-white uppercase tracking-tight">{month}</span>
+                                  <span className="text-[7px] md:text-[8px] font-bold text-gray-600 uppercase tracking-widest">{data.projects} Project{data.projects !== 1 ? 's' : ''}</span>
                                 </div>
                                 <div className="text-right">
-                                  <span className="text-[11px] font-black text-purple-400 font-mono tracking-tighter">${data.revenue.toLocaleString()}</span>
+                                  <span className="text-[10px] md:text-[11px] font-black text-purple-400 font-mono tracking-tighter">${data.revenue.toLocaleString()}</span>
                                   <div className="flex items-center gap-1 mt-0.5 justify-end">
-                                    <div className="h-0.5 w-8 bg-purple-500/20 rounded-full overflow-hidden">
+                                    <div className="h-0.5 w-6 md:w-8 bg-purple-500/20 rounded-full overflow-hidden">
                                       <div className="h-full bg-purple-500" style={{ width: `${Math.min(100, (data.revenue / (stat.totalValue || 1)) * 100 * 2)}%` }}></div>
                                     </div>
                                   </div>
@@ -895,26 +957,26 @@ const App: React.FC = () => {
                         {/* Recent History Section */}
                         <div className="space-y-4">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                            <span className="text-[9px] md:text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
                                <ListFilter className="w-3 h-3 text-emerald-500" /> Executive Chronology
                             </span>
                           </div>
                           <div className="space-y-2.5 max-h-[180px] overflow-y-auto custom-scrollbar pr-2">
                             {stat.projectDetails.map((proj, idx) => (
-                              <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-white/[0.01] border border-white/[0.03] hover:bg-white/[0.03] hover:border-white/10 transition-all group/proj">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/40 group-hover/proj:bg-emerald-500 transition-colors"></div>
-                                  <div>
-                                    <p className="text-[11px] font-black text-gray-300 group-hover/proj:text-white transition-colors truncate max-w-[100px]">{proj.name}</p>
-                                    <p className="text-[8px] text-gray-600 font-bold uppercase tracking-tight mt-0.5">{proj.date}</p>
+                              <div key={idx} className="flex items-center justify-between p-2 md:p-3 rounded-xl bg-white/[0.01] border border-white/[0.03] hover:bg-white/[0.03] hover:border-white/10 transition-all group/proj">
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/40 group-hover/proj:bg-emerald-500 transition-colors shrink-0"></div>
+                                  <div className="min-w-0">
+                                    <p className="text-[10px] md:text-[11px] font-black text-gray-300 group-hover/proj:text-white transition-colors truncate">{proj.name}</p>
+                                    <p className="text-[7px] md:text-[8px] text-gray-600 font-bold uppercase tracking-tight mt-0.5">{proj.date}</p>
                                   </div>
                                 </div>
-                                 <div className="text-right flex items-center gap-3">
-                                   <p className="text-[11px] font-black text-emerald-400/80 font-mono group-hover/proj:text-emerald-400 transition-colors">${proj.value.toLocaleString()}</p>
+                                 <div className="text-right flex items-center gap-2 md:gap-3 shrink-0">
+                                   <p className="text-[10px] md:text-[11px] font-black text-emerald-400/80 font-mono group-hover/proj:text-emerald-400 transition-colors">${proj.value.toLocaleString()}</p>
                                    {isAdmin && (
                                      <button 
                                        onClick={() => setHistory(prev => prev.filter(h => h.id !== proj.id))}
-                                       className="p-1.5 text-gray-700 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all opacity-0 group-hover/proj:opacity-100"
+                                       className="p-1 text-gray-700 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all opacity-0 group-hover/proj:opacity-100"
                                        title="Delete Project Entry"
                                      >
                                        <Trash2 className="w-3 h-3" />
@@ -942,16 +1004,16 @@ const App: React.FC = () => {
         )}
 
         {isSyncModalOpen && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/80 backdrop-blur-xl animate-in fade-in duration-300">
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-xl animate-in fade-in duration-300">
             <GlassCard className="w-full max-w-lg border-white/20 shadow-[0_0_100px_rgba(16,185,129,0.15)] overflow-hidden">
-               <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
+               <div className="p-4 md:p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
                  <div className="flex items-center gap-3">
                    <div className="p-2 bg-emerald-500/20 rounded-lg">
-                     <CloudLightning className="w-5 h-5 text-emerald-400" />
+                     <CloudLightning className="w-4 h-4 md:w-5 md:h-5 text-emerald-400" />
                    </div>
                    <div>
-                     <h2 className="text-xl font-black text-white uppercase tracking-tight">Sync & Portability Hub</h2>
-                     <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Move Data Between Browsers</p>
+                     <h2 className="text-lg md:text-xl font-black text-white uppercase tracking-tight">Sync Hub</h2>
+                     <p className="text-[8px] md:text-[9px] text-gray-500 font-bold uppercase tracking-widest">Portability Protocol</p>
                    </div>
                  </div>
                  <button onClick={() => setIsSyncModalOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-all">
@@ -959,19 +1021,19 @@ const App: React.FC = () => {
                  </button>
                </div>
                
-               <div className="p-8 space-y-6">
-                 <div className="p-6 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl text-center">
-                    <p className="text-[11px] text-emerald-400 font-bold uppercase tracking-widest leading-relaxed">
+               <div className="p-6 md:p-8 space-y-6">
+                 <div className="p-4 md:p-6 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl text-center">
+                    <p className="text-[10px] md:text-[11px] text-emerald-400 font-bold uppercase tracking-widest leading-relaxed">
                       Copy your Node Sync String to restore your data on any browser or device during registration.
                     </p>
                  </div>
 
                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest px-1">Your Unique Sync Code</label>
+                    <label className="text-[9px] md:text-[10px] font-black text-gray-500 uppercase tracking-widest px-1">Your Unique Sync Code</label>
                     <div className="relative group">
                        <textarea 
                          readOnly
-                         className="w-full bg-white/[0.03] border border-white/10 rounded-2xl p-4 pr-12 focus:outline-none focus:border-emerald-500/40 text-[10px] font-mono text-gray-400 h-24 custom-scrollbar select-all resize-none"
+                         className="w-full bg-white/[0.03] border border-white/10 rounded-2xl p-4 pr-12 focus:outline-none focus:border-emerald-500/40 text-[9px] md:text-[10px] font-mono text-gray-400 h-24 custom-scrollbar select-all resize-none"
                          value={getExportString()}
                        />
                        <button 
