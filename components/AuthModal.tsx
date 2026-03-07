@@ -191,7 +191,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ onAuthSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#050505] p-4 sm:p-6">
+    <div 
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#050505] p-4 sm:p-6 animate-in fade-in duration-500"
+    >
       {/* Dynamic Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[120px] animate-pulse"></div>

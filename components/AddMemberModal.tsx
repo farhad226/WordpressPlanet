@@ -194,7 +194,9 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ onClose, onSubmit, onBu
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-300"
+    >
       <GlassCard className="w-full max-w-lg max-h-[90vh] overflow-y-auto custom-scrollbar shadow-[0_0_80px_rgba(168,85,247,0.1)] border-white/20">
         <div className="p-4 md:p-6 border-b border-white/10 flex justify-between items-center bg-white/5 sticky top-0 z-10 backdrop-blur-xl">
           <div>

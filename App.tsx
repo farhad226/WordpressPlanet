@@ -896,6 +896,7 @@ const App: React.FC = () => {
           )}
         </div>
 
+        <div className="animate-in fade-in duration-300">
         {activeTab === 'performance' ? (
           <PerformanceView members={members} />
         ) : activeTab !== 'ledger' ? (
@@ -1575,6 +1576,7 @@ const App: React.FC = () => {
             </GlassCard>
           </div>
         )}
+        </div>
 
         <footer className="mt-12 text-center text-gray-600 text-[10px] font-black flex flex-col items-center gap-3 uppercase tracking-widest pb-8">
           <div className="flex flex-wrap justify-center items-center gap-8">
@@ -1641,9 +1643,10 @@ const PerformanceView = ({ members }: { members: any[] }) => {
   const [selectedMonth, setSelectedMonth] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  const { performanceData, allMonths } = useMemo(() => {
+  const { performanceData, allMonths, totalValue } = useMemo(() => {
     const data: Record<string, Record<string, number>> = {};
     const monthsSet = new Set<string>();
+    let total = 0;
     
     members.forEach(m => {
       if (m.isDelivered) {
@@ -1652,10 +1655,18 @@ const PerformanceView = ({ members }: { members: any[] }) => {
         if (!data[m.name]) data[m.name] = {};
         if (!data[m.name][monthYear]) data[m.name][monthYear] = 0;
         data[m.name][monthYear] += m.projectValue;
+
+        if (selectedMonth === 'All' || selectedMonth === monthYear) {
+          total += m.projectValue;
+        }
       }
     });
-    return { performanceData: data, allMonths: Array.from(monthsSet).sort((a, b) => new Date(b).getTime() - new Date(a).getTime()) };
-  }, [members]);
+    return { 
+      performanceData: data, 
+      allMonths: Array.from(monthsSet).sort((a, b) => new Date(b).getTime() - new Date(a).getTime()),
+      totalValue: total
+    };
+  }, [members, selectedMonth]);
 
   const filteredData = useMemo(() => {
     let filtered = { ...performanceData };
@@ -1684,19 +1695,19 @@ const PerformanceView = ({ members }: { members: any[] }) => {
   }, [performanceData, selectedMonth, searchQuery]);
 
   return (
-    <div className="space-y-6 animate-in fade-in zoom-in duration-500">
+    <div className="space-y-6 animate-in fade-in zoom-in duration-700">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <h2 className="text-xl font-black uppercase tracking-widest text-white">Performance Analytics</h2>
         <div className="flex items-center gap-4 w-full sm:w-auto">
           <input 
             type="text" 
             placeholder="Search member..."
-            className="bg-[#050505] border border-white/20 text-white text-sm rounded-xl px-4 py-2 focus:outline-none focus:border-purple-500/50 w-full sm:w-48"
+            className="bg-[#050505] border border-white/20 text-white text-sm rounded-xl px-4 py-2 focus:outline-none focus:border-purple-500/50 w-full sm:w-48 transition-all duration-300"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
           <select 
-            className="bg-[#050505] border border-white/20 text-white text-sm rounded-xl px-4 py-2 focus:outline-none focus:border-purple-500/50"
+            className="bg-[#050505] border border-white/20 text-white text-sm rounded-xl px-4 py-2 focus:outline-none focus:border-purple-500/50 transition-all duration-300"
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
           >
@@ -1705,14 +1716,24 @@ const PerformanceView = ({ members }: { members: any[] }) => {
           </select>
         </div>
       </div>
+
+      <GlassCard className="p-6 border-white/10 bg-gradient-to-br from-emerald-900/20 to-teal-900/20">
+        <div className="flex flex-col items-center justify-center text-center space-y-2">
+          <h3 className="text-sm font-black text-emerald-400 uppercase tracking-widest">Total Delivered Value ({selectedMonth === 'All' ? 'All Time' : selectedMonth})</h3>
+          <div className="text-4xl sm:text-5xl font-black text-white tracking-tighter drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]">
+            ${totalValue.toLocaleString()}
+          </div>
+        </div>
+      </GlassCard>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {Object.entries(filteredData).map(([name, months]) => (
-          <GlassCard key={name} className="p-6 border-white/10">
+          <GlassCard key={name} className="p-6 border-white/10 hover:border-purple-500/30 transition-colors duration-500">
             <h3 className="text-lg font-black text-white mb-4">{name}</h3>
             <div className="space-y-2">
               {Object.entries(months).map(([month, value]) => (
-                <div key={month} className="flex justify-between items-center text-sm">
-                  <span className="text-gray-400">{month}</span>
+                <div key={month} className="flex justify-between items-center text-sm group">
+                  <span className="text-gray-400 group-hover:text-white transition-colors duration-300">{month}</span>
                   <span className="text-emerald-400 font-mono font-bold">${value.toLocaleString()}</span>
                 </div>
               ))}
