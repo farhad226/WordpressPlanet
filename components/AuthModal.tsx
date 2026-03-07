@@ -19,6 +19,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ onAuthSuccess }) => {
   const [isFocused, setIsFocused] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resetCooldown, setResetCooldown] = useState(0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +35,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ onAuthSuccess }) => {
 
     try {
       if (isLogin) {
+        // Check if using placeholder credentials
+        if (supabase.auth.getSession === undefined || (supabase as any).supabaseUrl?.includes('placeholder')) {
+          setError('System configuration error: Supabase credentials are missing. Please check your environment variables.');
+          setIsLoading(false);
+          return;
+        }
+
         const { data, error: authError } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -44,6 +53,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ onAuthSuccess }) => {
           onAuthSuccess({ email: data.user.email! });
         }
       } else {
+        // Check if using placeholder credentials
+        if (supabase.auth.signUp === undefined || (supabase as any).supabaseUrl?.includes('placeholder')) {
+          setError('System configuration error: Supabase credentials are missing. Please check your environment variables.');
+          setIsLoading(false);
+          return;
+        }
+
         // Register logic with Supabase
         const { data, error: authError } = await supabase.auth.signUp({
           email,
@@ -53,6 +69,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ onAuthSuccess }) => {
         if (authError) throw authError;
 
         if (data.user) {
+          // If session is null, it means email confirmation is required
+          if (!data.session) {
+            setError('Please check your inbox to confirm your email before logging in.');
+            setIsLoading(false);
+            return;
+          }
+          
           // Portability: If they provided a sync code, save it to their data key
           if (syncCode.trim()) {
             try {
@@ -78,7 +101,90 @@ const AuthModal: React.FC<AuthModalProps> = ({ onAuthSuccess }) => {
       }
     } catch (err: any) {
       console.error("Auth error:", err);
-      setError(err.message || 'Authentication failed. Please try again.');
+      let message = err.message || 'Authentication failed. Please try again.';
+      
+      if (message.includes('Invalid login credentials')) {
+        message = "Invalid credentials. If you haven't joined yet, please switch to 'Join Team' below. If you have, check your password.";
+      } else if (message.includes('Email not confirmed')) {
+        message = 'Please check your inbox to confirm your email before logging in.';
+      } else if (message.includes('User already registered')) {
+        message = 'This Terminal ID is already registered. Please login instead.';
+      } else if (message.toLowerCase().includes('rate limit')) {
+        message = 'Security Protocol: Email rate limit reached. Please wait 5-10 minutes before trying to resend or reset again.';
+        // Set a temporary cooldown on the main button too
+        setResendCooldown(60);
+      }
+      
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!email) {
+      setError('Please enter your Terminal ID to resend confirmation.');
+      return;
+    }
+    if (resendCooldown > 0) return;
+
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+      });
+      if (error) throw error;
+      setError('Confirmation link resent. Please check your inbox.');
+      setResendCooldown(60);
+      const timer = setInterval(() => {
+        setResendCooldown(prev => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch (err: any) {
+      let message = err.message || 'Failed to resend confirmation.';
+      if (message.includes('Email rate limit exceeded')) {
+        message = 'Email limit reached. Please wait a few minutes before trying again.';
+      }
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!email) {
+      setError('Please enter your email to reset password.');
+      return;
+    }
+    if (resetCooldown > 0) return;
+
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      if (error) throw error;
+      setError('Password reset link sent to your email.');
+      setResetCooldown(60);
+      const timer = setInterval(() => {
+        setResetCooldown(prev => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch (err: any) {
+      let message = err.message || 'Failed to send reset link.';
+      if (message.includes('Email rate limit exceeded')) {
+        message = 'Email limit reached. Please wait a few minutes before trying again.';
+      }
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -130,9 +236,21 @@ const AuthModal: React.FC<AuthModalProps> = ({ onAuthSuccess }) => {
             </div>
 
             <div className="space-y-2 group">
-              <label className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 px-1 transition-colors duration-300 ${isFocused === 'password' ? 'text-purple-400' : 'text-gray-500'}`}>
-                <Lock className={`w-3 h-3 transition-transform ${isFocused === 'password' ? 'scale-110' : ''}`} /> Security Key
-              </label>
+              <div className="flex items-center justify-between px-1">
+                <label className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-colors duration-300 ${isFocused === 'password' ? 'text-purple-400' : 'text-gray-500'}`}>
+                  <Lock className={`w-3 h-3 transition-transform ${isFocused === 'password' ? 'scale-110' : ''}`} /> Security Key
+                </label>
+                {isLogin && (
+                  <button 
+                    type="button"
+                    disabled={isLoading || resetCooldown > 0}
+                    onClick={handleResetPassword}
+                    className="text-[9px] font-black text-purple-500 uppercase tracking-widest hover:text-purple-400 transition-colors disabled:opacity-50"
+                  >
+                    {resetCooldown > 0 ? `Wait ${resetCooldown}s` : 'Forgot?'}
+                  </button>
+                )}
+              </div>
               <div className="relative">
                 <input 
                   type="password"
@@ -170,17 +288,29 @@ const AuthModal: React.FC<AuthModalProps> = ({ onAuthSuccess }) => {
             )}
 
             {error && (
-              <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center gap-3 animate-in slide-in-from-top-2 duration-300">
-                <div className="p-1.5 bg-rose-500/20 rounded-lg">
-                  <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
+              <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex flex-col gap-3 animate-in slide-in-from-top-2 duration-300">
+                <div className="flex items-center gap-3">
+                  <div className="p-1.5 bg-rose-500/20 rounded-lg">
+                    <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
+                  </div>
+                  <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest leading-tight">{error}</p>
                 </div>
-                <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest leading-tight">{error}</p>
+                {error.includes('confirm your email') && (
+                  <button 
+                    type="button"
+                    disabled={isLoading || resendCooldown > 0}
+                    onClick={handleResendConfirmation}
+                    className="text-[9px] font-black text-white bg-rose-500/20 hover:bg-rose-500/40 py-2 rounded-xl transition-colors uppercase tracking-widest disabled:opacity-50"
+                  >
+                    {resendCooldown > 0 ? `Wait ${resendCooldown}s to Resend` : 'Resend Confirmation Link'}
+                  </button>
+                )}
               </div>
             )}
 
             <button 
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || resendCooldown > 0}
               className="w-full group relative py-4 bg-white text-black font-black text-[11px] uppercase tracking-[0.3em] rounded-2xl shadow-xl shadow-purple-900/10 transition-all hover:bg-purple-500 hover:text-white active:scale-[0.97] flex items-center justify-center gap-3 mt-4 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -188,6 +318,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ onAuthSuccess }) => {
                 {isLoading ? (
                   <>
                     Processing <RefreshCw className="w-4 h-4 animate-spin" />
+                  </>
+                ) : resendCooldown > 0 ? (
+                  <>
+                    Cooldown Active ({resendCooldown}s) <CloudLightning className="w-4 h-4 animate-pulse" />
                   </>
                 ) : isLogin ? (
                   <>
