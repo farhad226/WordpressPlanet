@@ -20,6 +20,7 @@ const THEME_COLORS = [
 const AddMemberModal: React.FC<AddMemberModalProps> = ({ onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
     name: '',
+    profileName: '',
     projectName: '',
     assignedDate: new Date().toISOString().split('T')[0],
     deliveryDate: '',
@@ -34,6 +35,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ onClose, onSubmit }) =>
     e.preventDefault();
     onSubmit({
       name: formData.name,
+      profileName: formData.profileName,
       projectName: formData.projectName,
       assignedDate: formData.assignedDate,
       deliveryDate: formData.deliveryDate,
@@ -80,17 +82,32 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ onClose, onSubmit }) =>
               </div>
               <div>
                 <label className="block text-[9px] md:text-[10px] font-black text-gray-500 mb-2 uppercase tracking-widest flex items-center gap-2">
-                  <Briefcase className="w-3 h-3 text-purple-400" /> Project Name
+                  <User className="w-3 h-3 text-purple-400" /> Profile Name
                 </label>
                 <input 
                   required
                   type="text"
-                  placeholder="App Dashboard"
+                  placeholder="elena_g"
                   className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500/50 transition-all text-sm text-white placeholder:text-gray-700 font-medium"
-                  value={formData.projectName}
-                  onChange={(e) => setFormData({...formData, projectName: e.target.value})}
+                  value={formData.profileName}
+                  onChange={(e) => setFormData({...formData, profileName: e.target.value})}
                 />
               </div>
+            </div>
+
+            {/* Project Name */}
+            <div>
+              <label className="block text-[9px] md:text-[10px] font-black text-gray-500 mb-2 uppercase tracking-widest flex items-center gap-2">
+                <Briefcase className="w-3 h-3 text-purple-400" /> Project Name
+              </label>
+              <input 
+                required
+                type="text"
+                placeholder="App Dashboard"
+                className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500/50 transition-all text-sm text-white placeholder:text-gray-700 font-medium"
+                value={formData.projectName}
+                onChange={(e) => setFormData({...formData, projectName: e.target.value})}
+              />
             </div>
 
             {/* Timelines */}

@@ -2,6 +2,7 @@
 export interface TeamMember {
   id: string;
   name: string;
+  profileName: string;
   projectName: string;
   assignedDate: string;
   deliveryDate: string;

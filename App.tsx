@@ -53,6 +53,7 @@ import EditLogoModal from './components/EditLogoModal';
 import AuthModal from './components/AuthModal';
 import { SyncService } from './services/SyncService';
 import { supabase } from './services/supabase';
+import { SEED_MEMBERS } from './seedData';
 
 const DEFAULT_LOGO_URL = 'https://i.imgur.com/8Qp6u8f.png'; 
 
@@ -359,6 +360,31 @@ const App: React.FC = () => {
     }
   };
 
+  const seedDatabase = async () => {
+    if (window.confirm('This will replace all current projects with the seed data. Continue?')) {
+      setMembers(SEED_MEMBERS);
+      // Force immediate cloud save for seed data
+      if (currentUser) {
+        setIsCloudSaving(true);
+        const data: UserStorageData = { members: SEED_MEMBERS, history, logoUrl };
+        await SyncService.saveUserData(currentUser.email, data);
+        setIsCloudSaving(false);
+      }
+    }
+  };
+
+  const clearAllProjects = async () => {
+    if (window.confirm('Are you sure you want to clear ALL active projects? This cannot be undone.')) {
+      setMembers([]);
+      if (currentUser) {
+        setIsCloudSaving(true);
+        const data: UserStorageData = { members: [], history, logoUrl };
+        await SyncService.saveUserData(currentUser.email, data);
+        setIsCloudSaving(false);
+      }
+    }
+  };
+
   const initiateDeleteHistory = (memberName: string) => setHistoryMemberToDelete(memberName);
   const confirmDeleteHistory = () => {
     if (historyMemberToDelete) {
@@ -558,6 +584,26 @@ const App: React.FC = () => {
             </div>
             
             <div className="flex items-center gap-2">
+              {isAdmin && (
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={seedDatabase}
+                    className="flex items-center gap-2 bg-white/5 border border-white/10 hover:bg-white/10 text-gray-400 px-3 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all group/seed"
+                    title="Seed Database from CSV"
+                  >
+                    <Database className="w-3 h-3 group-hover/seed:rotate-12 transition-transform" />
+                    Seed Data
+                  </button>
+                  <button 
+                    onClick={clearAllProjects}
+                    className="flex items-center gap-2 bg-rose-500/5 border border-rose-500/10 hover:bg-rose-500/10 text-rose-500/70 px-3 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all group/clear"
+                    title="Clear All Projects"
+                  >
+                    <Trash2 className="w-3 h-3 group-hover/clear:scale-110 transition-transform" />
+                    Clear All
+                  </button>
+                </div>
+              )}
               <button 
                 onClick={() => setIsAddModalOpen(true)}
                 className="flex items-center gap-2 bg-gradient-to-br from-purple-700 to-indigo-900 hover:from-purple-600 hover:to-indigo-800 text-white px-4 md:px-5 py-2 md:py-2.5 rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-widest transition-all shadow-lg active:scale-95 group/add"
@@ -645,7 +691,10 @@ const App: React.FC = () => {
                           {(member.name || '?').split(' ').map(n => n[0]).join('')}
                         </div>
                         <div>
-                          <h3 className="text-sm font-black text-white">{member.name}</h3>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-black text-white">{member.name}</h3>
+                            <span className="text-[10px] text-purple-400 font-bold">@{member.profileName}</span>
+                          </div>
                           <div className="flex flex-col gap-0.5 mt-0.5">
                             <input 
                               type="text" 
@@ -770,7 +819,13 @@ const App: React.FC = () => {
                                   {(member.name || '?').split(' ').map(n => n[0]).join('')}
                                 </div>
                                 <div className="flex flex-col">
-                                  <input type="text" value={member.name} onChange={(e) => handleUpdateField(member.id, 'name', e.target.value)} className="bg-transparent border-none p-0 font-black text-white text-sm focus:ring-0 w-full hover:bg-white/10 rounded px-2 -ml-2 transition-all" />
+                                  <div className="flex items-center gap-2">
+                                    <input type="text" value={member.name} onChange={(e) => handleUpdateField(member.id, 'name', e.target.value)} className="bg-transparent border-none p-0 font-black text-white text-sm focus:ring-0 w-32 hover:bg-white/10 rounded px-2 -ml-2 transition-all" />
+                                    <div className="flex items-center text-purple-400 font-bold text-[10px]">
+                                      <span>@</span>
+                                      <input type="text" value={member.profileName} onChange={(e) => handleUpdateField(member.id, 'profileName', e.target.value)} className="bg-transparent border-none p-0 focus:ring-0 w-24 hover:bg-white/10 rounded px-1 transition-all" />
+                                    </div>
+                                  </div>
                                   <div className="flex items-center gap-1.5 mt-0.5 group/url">
                                     {isAdmin ? (
                                       <input 
