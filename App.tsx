@@ -78,6 +78,7 @@ const App: React.FC = () => {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<TeamMember | null>(null);
+  const [historyMemberToDelete, setHistoryMemberToDelete] = useState<string | null>(null);
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -340,6 +341,16 @@ const App: React.FC = () => {
       setMemberToDelete(null);
     }
   };
+
+  const initiateDeleteHistory = (memberName: string) => setHistoryMemberToDelete(memberName);
+  const confirmDeleteHistory = () => {
+    if (historyMemberToDelete) {
+      setHistory(prev => prev.filter(h => h.name !== historyMemberToDelete));
+      setHistoryMemberToDelete(null);
+    }
+  };
+
+  const isAdmin = currentUser?.email === 'farhadhossain6920@gmail.com';
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) return <ArrowUpDown className="w-3 h-3 ml-1 text-gray-600 transition-transform group-hover:scale-125" />;
@@ -798,9 +809,20 @@ const App: React.FC = () => {
                             </div>
                           </div>
                         </div>
-                        <div className="hidden sm:flex flex-col items-end">
-                           <Award className="w-6 h-6 text-emerald-500 mb-1" />
-                           <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Performance Tier 1</span>
+                        <div className="flex items-center gap-3">
+                          {isAdmin && (
+                            <button 
+                              onClick={() => initiateDeleteHistory(stat.name)}
+                              className="p-2 text-gray-600 hover:text-rose-500 hover:bg-rose-500/15 rounded-xl transition-all active:scale-90 group/del-hist"
+                              title="Delete Member History"
+                            >
+                              <Trash2 className="w-4 h-4 transition-transform group-hover/del-hist:scale-110" />
+                            </button>
+                          )}
+                          <div className="hidden sm:flex flex-col items-end">
+                             <Award className="w-6 h-6 text-emerald-500 mb-1" />
+                             <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Performance Tier 1</span>
+                          </div>
                         </div>
                       </div>
 
@@ -870,9 +892,18 @@ const App: React.FC = () => {
                                     <p className="text-[8px] text-gray-600 font-bold uppercase tracking-tight mt-0.5">{proj.date}</p>
                                   </div>
                                 </div>
-                                <div className="text-right">
-                                  <p className="text-[11px] font-black text-emerald-400/80 font-mono group-hover/proj:text-emerald-400 transition-colors">${proj.value.toLocaleString()}</p>
-                                </div>
+                                 <div className="text-right flex items-center gap-3">
+                                   <p className="text-[11px] font-black text-emerald-400/80 font-mono group-hover/proj:text-emerald-400 transition-colors">${proj.value.toLocaleString()}</p>
+                                   {isAdmin && (
+                                     <button 
+                                       onClick={() => setHistory(prev => prev.filter(h => h.id !== proj.id))}
+                                       className="p-1.5 text-gray-700 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all opacity-0 group-hover/proj:opacity-100"
+                                       title="Delete Project Entry"
+                                     >
+                                       <Trash2 className="w-3 h-3" />
+                                     </button>
+                                   )}
+                                 </div>
                               </div>
                             ))}
                           </div>
@@ -969,6 +1000,7 @@ const App: React.FC = () => {
       {isAddModalOpen && <AddMemberModal onClose={() => setIsAddModalOpen(false)} onSubmit={handleAddMember} />}
       {isEditLogoModalOpen && <EditLogoModal initialUrl={logoUrl} onClose={() => setIsEditLogoModalOpen(false)} onUpdate={(newUrl) => { setLogoUrl(newUrl); setIsEditLogoModalOpen(false); }} />}
       {memberToDelete && <DeleteConfirmModal memberName={memberToDelete.name} onClose={() => setMemberToDelete(null)} onConfirm={confirmDelete} />}
+      {historyMemberToDelete && <DeleteConfirmModal memberName={historyMemberToDelete} onClose={() => setHistoryMemberToDelete(null)} onConfirm={confirmDeleteHistory} />}
 
       <style>{`
         @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
