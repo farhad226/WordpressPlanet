@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Plus, Trash2, Shield, Eye, EyeOff, Link as LinkIcon, CheckCircle2, Mail } from 'lucide-react';
-import { GuestAccess } from '../types';
+import { GuestAccess, UserRole } from '../types';
 
 interface AccessControlModalProps {
   guests: GuestAccess[];
@@ -19,6 +19,7 @@ const AccessControlModal: React.FC<AccessControlModalProps> = ({ guests, onUpdat
     
     const newGuest: GuestAccess = {
       email: newEmail.trim(),
+      role: 'Viewer',
       canViewFleet: true,
       canViewDelivery: true,
       canViewLedger: true,
@@ -114,7 +115,27 @@ const AccessControlModal: React.FC<AccessControlModalProps> = ({ guests, onUpdat
                 <div key={guest.email} className="bg-white/[0.02] border border-white/5 rounded-xl p-4 flex flex-col gap-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-black text-white">{guest.email}</span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
+                      <select 
+                        value={guest.role}
+                        onChange={(e) => {
+                          const newRole = e.target.value as UserRole;
+                          let newPermissions = { ...guest, role: newRole };
+                          if (newRole === 'Admin') {
+                            newPermissions = { ...newPermissions, canViewFleet: true, canViewDelivery: true, canViewLedger: true, canViewFinancials: true };
+                          } else if (newRole === 'Editor') {
+                            newPermissions = { ...newPermissions, canViewFleet: true, canViewDelivery: true, canViewLedger: true, canViewFinancials: false };
+                          } else {
+                            newPermissions = { ...newPermissions, canViewFleet: true, canViewDelivery: true, canViewLedger: false, canViewFinancials: false };
+                          }
+                          setLocalGuests(localGuests.map(g => g.email === guest.email ? newPermissions : g));
+                        }}
+                        className="bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-[10px] font-black uppercase tracking-widest text-white focus:outline-none focus:border-purple-500/50"
+                      >
+                        <option value="Admin">Admin</option>
+                        <option value="Editor">Editor</option>
+                        <option value="Viewer">Viewer</option>
+                      </select>
                       <button 
                         onClick={() => handleSendInvite(guest.email)} 
                         className="flex items-center gap-1.5 px-2 py-1.5 text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors text-[9px] font-black uppercase tracking-widest"

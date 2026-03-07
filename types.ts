@@ -25,8 +25,11 @@ export interface User {
   password?: string; // Only used for local storage auth simulation
 }
 
+export type UserRole = 'Admin' | 'Editor' | 'Viewer';
+
 export interface GuestAccess {
   email: string;
+  role: UserRole;
   canViewFleet: boolean;
   canViewDelivery: boolean;
   canViewLedger: boolean;
