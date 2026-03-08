@@ -14,6 +14,8 @@ export interface TeamMember {
   syncTargetHours?: number; // Optional override for sync protocol target hours
   nextUpdateDate?: string; // Manual control for next update due date
   isDelivered?: boolean; // True if the project has been marked as delivered
+  isScheduled?: boolean; // True if the project has been marked for scheduled operations
+  targetDate?: string; // Specific target date for scheduled operations, independent of deliveryDate
 }
 
 export interface HistoricalProject extends TeamMember {

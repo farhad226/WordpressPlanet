@@ -13,6 +13,8 @@ import {
   ChevronDown,
   ArrowUpDown,
   Calendar,
+  CalendarPlus,
+  CalendarMinus,
   Link as LinkIcon,
   Briefcase,
   Bell,
@@ -93,7 +95,7 @@ const App: React.FC = () => {
   // UI & Sync state
   const [isSyncing, setIsSyncing] = useState(false);
   const [isCloudSaving, setIsCloudSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<'fleet' | 'delivery' | 'ledger' | 'performance'>('fleet');
+  const [activeTab, setActiveTab] = useState<'fleet' | 'delivery' | 'ledger' | 'performance' | 'scheduled'>('fleet');
   const [searchQuery, setSearchQuery] = useState('');
   const [ledgerSearchQuery, setLedgerSearchQuery] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -129,6 +131,12 @@ const App: React.FC = () => {
       } else if (activeTab === 'ledger' && !guestPermissions.canViewLedger) {
         setActiveTab(guestPermissions.canViewFleet ? 'fleet' : (guestPermissions.canViewDelivery ? 'delivery' : 'fleet'));
       }
+    }
+    
+    // Auto-sort by delivery date when entering Scheduled Ops
+    if (activeTab === 'scheduled') {
+      setSortField('deliveryDate');
+      setSortOrder('asc');
     }
   }, [guestPermissions, activeTab]);
 
@@ -412,6 +420,8 @@ const App: React.FC = () => {
     let base = members;
     if (activeTab === 'fleet') {
       base = members.filter(m => !m.isDelivered);
+    } else if (activeTab === 'scheduled') {
+      base = members.filter(m => !m.isDelivered && m.isScheduled);
     } else if (activeTab === 'delivery') {
       base = members.filter(m => m.isDelivered);
     }
@@ -862,6 +872,15 @@ const App: React.FC = () => {
               Fleet Operations
             </button>
           )}
+          {(!guestPermissions || guestPermissions.canViewFleet) && (
+            <button 
+              onClick={() => setActiveTab('scheduled')}
+              className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeTab === 'scheduled' ? 'bg-amber-600 text-white shadow-[0_0_20px_rgba(245,158,11,0.3)]' : 'text-gray-600 hover:text-gray-400'}`}
+            >
+              <Calendar className="w-3 h-3 md:w-3.5 md:h-3.5" />
+              Scheduled Ops
+            </button>
+          )}
           {(!guestPermissions || guestPermissions.canViewDelivery) && (
             <button 
               onClick={() => setActiveTab('delivery')}
@@ -902,9 +921,9 @@ const App: React.FC = () => {
         ) : activeTab !== 'ledger' ? (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 mb-8">
-              {(activeTab === 'fleet' ? 
+              {(activeTab === 'fleet' || activeTab === 'scheduled' ? 
                 [
-                  { label: 'FLEET', value: members.filter(m => !m.isDelivered).length, icon: Users, color: 'purple' },
+                  { label: activeTab === 'scheduled' ? 'SCHEDULED OPS' : 'FLEET', value: members.filter(m => !m.isDelivered).length, icon: Users, color: activeTab === 'scheduled' ? 'amber' : 'purple' },
                   { label: 'LIQUIDITY', value: (!guestPermissions || guestPermissions.canViewFinancials) ? `$${(totalValue - deliveredTotalValue).toLocaleString()}` : 'HIDDEN', icon: DollarSign, color: 'emerald' },
                   { label: 'PROGRESS', value: `${avgProgress}%`, icon: TrendingUp, color: 'blue' }
                 ]
@@ -975,11 +994,34 @@ const App: React.FC = () => {
 
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       <div className="space-y-1">
-                        <p className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Remaining</p>
-                        <div className={`flex items-center gap-2 px-2 py-1 rounded-lg border ${remaining.isOverdue ? 'bg-rose-500/10 border-rose-500/30 text-rose-500' : (isUrgent ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'bg-white/5 border-white/10 text-white')}`}>
-                          <Clock className="w-3 h-3" />
-                          <span className="text-xs font-black font-mono">{remaining.isOverdue ? 'OVERDUE' : `${remaining.days}d ${remaining.hours}h`}</span>
-                        </div>
+                        <p className="text-[8px] font-black text-gray-600 uppercase tracking-widest">{activeTab === 'scheduled' ? 'Target Date' : 'Remaining'}</p>
+                        {activeTab === 'scheduled' ? (
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-2 py-1 rounded-lg">
+                              <Calendar className="w-3 h-3 text-gray-400" />
+                              <input 
+                                type="date" 
+                                value={member.targetDate || ''} 
+                                onChange={(e) => handleUpdateField(member.id, 'targetDate', e.target.value)} 
+                                className="bg-transparent border-none p-0 text-[10px] font-mono text-white focus:ring-0 w-full [color-scheme:dark]"
+                              />
+                            </div>
+                            {member.targetDate && new Date() >= new Date(member.targetDate) && (
+                              <button
+                                onClick={() => handleUpdateField(member.id, 'isDelivered', true)}
+                                className="w-full py-1.5 bg-emerald-500/20 hover:bg-emerald-500/40 border border-emerald-500/30 rounded-lg text-[9px] font-black text-emerald-400 uppercase tracking-widest transition-all animate-pulse hover:animate-none flex items-center justify-center gap-1 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+                              >
+                                <CheckCircle2 className="w-3 h-3" />
+                                GO TO DELIVERY
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <div className={`flex items-center gap-2 px-2 py-1 rounded-lg border ${remaining.isOverdue ? 'bg-rose-500/10 border-rose-500/30 text-rose-500' : (isUrgent ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'bg-white/5 border-white/10 text-white')}`}>
+                            <Clock className="w-3 h-3" />
+                            <span className="text-xs font-black font-mono">{remaining.isOverdue ? 'OVERDUE' : `${remaining.days}d ${remaining.hours}h`}</span>
+                          </div>
+                        )}
                       </div>
                       <div className="space-y-1 text-right">
                         <p className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Value</p>
@@ -991,7 +1033,7 @@ const App: React.FC = () => {
                       </div>
                     </div>
 
-                    {isAdmin && (
+                    {isAdmin && activeTab !== 'scheduled' && (
                       <div className="mb-4 p-2 bg-white/[0.03] border border-white/10 rounded-xl flex items-center justify-between">
                         <div className="flex flex-col">
                           <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Sync Protocol</span>
@@ -1017,6 +1059,7 @@ const App: React.FC = () => {
                       </div>
                     )}
 
+                    {activeTab !== 'scheduled' && (
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Progress</span>
@@ -1026,6 +1069,7 @@ const App: React.FC = () => {
                         <div className={`h-full bg-gradient-to-r ${getColorClass(member.themeColor)}`} style={{ width: `${member.progress}%` }} />
                       </div>
                     </div>
+                    )}
                   </GlassCard>
                 );
               })}
@@ -1048,16 +1092,29 @@ const App: React.FC = () => {
                         <th className="px-5 py-6 text-[11px] font-black text-gray-500 uppercase tracking-widest cursor-pointer" onClick={() => handleSort('projectName')}>
                           <div className="flex items-center group/th">AXIS HUB <SortIcon field="projectName" /></div>
                         </th>
-                        <th className="px-5 py-6 text-[11px] font-black text-gray-500 uppercase tracking-widest text-center">SYNC PROTOCOL</th>
-                        <th className="px-5 py-6 text-[11px] font-black text-gray-500 uppercase tracking-widest cursor-pointer" onClick={() => handleSort('assignedDate')}>
-                          <div className="flex items-center group/th">IGNITION <SortIcon field="assignedDate" /></div>
-                        </th>
+                        {activeTab !== 'scheduled' && (
+                          <th className="px-5 py-6 text-[11px] font-black text-gray-500 uppercase tracking-widest text-center">SYNC PROTOCOL</th>
+                        )}
+                        {activeTab !== 'scheduled' && (
+                          <th className="px-5 py-6 text-[11px] font-black text-gray-500 uppercase tracking-widest cursor-pointer" onClick={() => handleSort('assignedDate')}>
+                            <div className="flex items-center group/th">IGNITION <SortIcon field="assignedDate" /></div>
+                          </th>
+                        )}
                         <th className="px-5 py-6 text-[11px] font-black text-gray-500 uppercase tracking-widest cursor-pointer" onClick={() => handleSort('deliveryDate')}>
                           <div className="flex items-center group/th">DEPLOYMENT <SortIcon field="deliveryDate" /></div>
                         </th>
-                        <th className="px-5 py-6 text-[11px] font-black text-gray-500 uppercase tracking-widest text-center">REMAINING</th>
-                        <th className="px-5 py-6 text-[11px] font-black text-gray-500 uppercase tracking-widest">LIQUIDITY / SCOPE</th>
-                        <th className="px-5 py-6 text-[11px] font-black text-gray-500 uppercase tracking-widest">LIFECYCLE</th>
+                        {activeTab === 'scheduled' && (
+                          <th className="px-5 py-6 text-[11px] font-black text-gray-500 uppercase tracking-widest text-center">TARGET DATE</th>
+                        )}
+                        {activeTab !== 'scheduled' && (
+                          <>
+                            <th className="px-5 py-6 text-[11px] font-black text-gray-500 uppercase tracking-widest text-center">REMAINING</th>
+                            <th className="px-5 py-6 text-[11px] font-black text-gray-500 uppercase tracking-widest">LIQUIDITY / SCOPE</th>
+                          </>
+                        )}
+                        {activeTab !== 'scheduled' && (
+                          <th className="px-5 py-6 text-[11px] font-black text-gray-500 uppercase tracking-widest">LIFECYCLE</th>
+                        )}
                         <th className="px-5 py-6 text-[11px] font-black text-gray-500 uppercase tracking-widest text-center">X</th>
                       </tr>
                     </thead>
@@ -1125,6 +1182,7 @@ const App: React.FC = () => {
                               </div>
                             </td>
 
+                            {activeTab !== 'scheduled' && (
                             <td className="px-5 py-6 text-center">
                               <div className="flex flex-col items-center gap-1.5">
                                 <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${overdue ? 'bg-amber-500/20 border-amber-500/50 text-amber-500 animate-pulse' : 'bg-white/5 text-gray-500 border-white/10 group-hover/tr:text-purple-400 group-hover/tr:border-purple-500/20'}`}>
@@ -1174,54 +1232,101 @@ const App: React.FC = () => {
                                 </div>
                               </div>
                             </td>
+                            )}
 
+                            {activeTab !== 'scheduled' && (
                             <td className="px-5 py-6">
                               <div className="flex flex-col">
                                 <span className="text-[10px] font-black text-gray-700 uppercase mb-1 tracking-wider">Genesis</span>
                                 <input type="date" value={member.assignedDate} onChange={(e) => handleUpdateField(member.id, 'assignedDate', e.target.value)} className="bg-transparent border-none p-0 text-gray-500 font-mono text-[11px] focus:ring-0 [color-scheme:dark] transition-colors group-hover/tr:text-gray-300" />
                               </div>
                             </td>
+                            )}
 
                             <td className="px-5 py-6">
-                              <div className="flex flex-col">
+                              <div className="flex flex-col relative">
                                 <span className="text-[10px] font-black text-gray-700 uppercase mb-1 tracking-wider">Target</span>
-                                <input type="date" value={member.deliveryDate} onChange={(e) => handleUpdateField(member.id, 'deliveryDate', e.target.value)} className={`bg-transparent border-none p-0 ${isCritical ? 'text-rose-400' : 'text-white'} font-mono text-[11px] focus:ring-0 [color-scheme:dark] transition-colors`} />
-                              </div>
-                            </td>
-
-                            <td className="px-5 py-6">
-                              <div className="flex justify-center">
-                                <div className={`w-[120px] py-2.5 rounded-xl border flex flex-col items-center gap-1 transition-all ${remaining.isOverdue ? 'bg-rose-500/15 border-rose-500/40' : (isUrgent ? 'bg-amber-500/15 border-amber-500/40' : 'bg-white/5 border-white/15 group-hover/tr:border-purple-500/30')}`}>
-                                  <div className="flex items-center gap-2">
-                                    <span className={`text-lg font-black font-mono leading-none ${remaining.isOverdue ? 'text-rose-500' : 'text-white'}`}>{remaining.isOverdue ? '!!' : remaining.days}</span>
-                                    <span className="text-gray-700 font-black animate-pulse">:</span>
-                                    <span className={`text-lg font-black font-mono leading-none ${remaining.isOverdue ? 'text-rose-500' : 'text-white'}`}>{remaining.isOverdue ? '!!' : remaining.hours}</span>
-                                  </div>
-                                  <span className={`text-[8px] font-black uppercase tracking-[0.2em] ${remaining.isOverdue ? 'text-rose-400' : 'text-gray-500'}`}>{remaining.isOverdue ? 'BREACHED' : 'CLOCKED'}</span>
+                                <div className="flex items-center gap-2">
+                                  {activeTab === 'scheduled' ? (
+                                    <div className="flex items-center gap-2 opacity-60 cursor-not-allowed" title="Use Target Date column to edit">
+                                      <Calendar className="w-3 h-3 text-gray-600" />
+                                      <span className={`font-mono text-[11px] ${isCritical ? 'text-rose-400' : 'text-gray-400'}`}>
+                                        {member.deliveryDate}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-2 opacity-60 cursor-not-allowed" title="Move to Scheduled Ops to edit date">
+                                      <Calendar className="w-3 h-3 text-gray-600" />
+                                      <span className={`font-mono text-[11px] ${isCritical ? 'text-rose-400' : 'text-gray-400'}`}>
+                                        {member.deliveryDate}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {activeTab === 'scheduled' && member.targetDate && new Date() >= new Date(member.targetDate) && (
+                                    <button
+                                      onClick={() => handleUpdateField(member.id, 'isDelivered', true)}
+                                      className="ml-2 px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/40 border border-emerald-500/30 rounded-lg text-[9px] font-black text-emerald-400 uppercase tracking-widest transition-all animate-pulse hover:animate-none flex items-center gap-1 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+                                    >
+                                      <CheckCircle2 className="w-3 h-3" />
+                                      GO TO DELIVERY
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             </td>
 
-                            <td className="px-5 py-6">
-                              <div className="flex flex-col gap-3">
-                                {(!guestPermissions || guestPermissions.canViewFinancials) ? (
-                                  <div className="flex items-center text-white font-black text-2xl tracking-tighter group/val">
-                                    <span className="text-purple-500 mr-1 text-sm font-bold">$</span>
-                                    <input type="number" value={member.projectValue} onChange={(e) => handleUpdateField(member.id, 'projectValue', parseFloat(e.target.value) || 0)} className="bg-transparent border-none p-0 focus:ring-0 w-24 text-base transition-colors group-hover/tr:text-purple-400" />
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center text-gray-600 font-black text-2xl tracking-tighter">
-                                    <Lock className="w-5 h-5" />
-                                  </div>
-                                )}
-                                <div className="flex items-center text-[9px] text-purple-400 font-black uppercase tracking-widest bg-white/[0.04] border border-white/10 px-2.5 py-1 rounded-xl w-fit group/units hover:bg-white/[0.08] transition-all">
-                                  <Layers className="w-3 h-3 mr-1.5" />
-                                  <input type="number" value={member.pageCount} onChange={(e) => handleUpdateField(member.id, 'pageCount', parseInt(e.target.value) || 0)} className="bg-transparent border-none p-0 focus:ring-0 w-8 text-center" />
-                                  <span>UNITS</span>
+                            {activeTab === 'scheduled' && (
+                              <td className="px-5 py-6">
+                                <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors group/date cursor-pointer w-fit mx-auto">
+                                  <Calendar className="w-3 h-3 text-gray-400 group-hover/date:text-purple-400" />
+                                  <input 
+                                    type="date" 
+                                    value={member.targetDate || ''} 
+                                    onChange={(e) => handleUpdateField(member.id, 'targetDate', e.target.value)} 
+                                    className={`bg-transparent border-none p-0 ${isCritical ? 'text-rose-400' : 'text-white'} font-mono text-[11px] focus:ring-0 [color-scheme:dark] cursor-pointer w-32`} 
+                                  />
                                 </div>
-                              </div>
-                            </td>
+                              </td>
+                            )}
 
+                            {activeTab !== 'scheduled' && (
+                              <>
+                                <td className="px-5 py-6">
+                                  <div className="flex justify-center">
+                                    <div className={`w-[120px] py-2.5 rounded-xl border flex flex-col items-center gap-1 transition-all ${remaining.isOverdue ? 'bg-rose-500/15 border-rose-500/40' : (isUrgent ? 'bg-amber-500/15 border-amber-500/40' : 'bg-white/5 border-white/15 group-hover/tr:border-purple-500/30')}`}>
+                                      <div className="flex items-center gap-2">
+                                        <span className={`text-lg font-black font-mono leading-none ${remaining.isOverdue ? 'text-rose-500' : 'text-white'}`}>{remaining.isOverdue ? '!!' : remaining.days}</span>
+                                        <span className="text-gray-700 font-black animate-pulse">:</span>
+                                        <span className={`text-lg font-black font-mono leading-none ${remaining.isOverdue ? 'text-rose-500' : 'text-white'}`}>{remaining.isOverdue ? '!!' : remaining.hours}</span>
+                                      </div>
+                                      <span className={`text-[8px] font-black uppercase tracking-[0.2em] ${remaining.isOverdue ? 'text-rose-400' : 'text-gray-500'}`}>{remaining.isOverdue ? 'BREACHED' : 'CLOCKED'}</span>
+                                    </div>
+                                  </div>
+                                </td>
+
+                                <td className="px-5 py-6">
+                                  <div className="flex flex-col gap-3">
+                                    {(!guestPermissions || guestPermissions.canViewFinancials) ? (
+                                      <div className="flex items-center text-white font-black text-2xl tracking-tighter group/val">
+                                        <span className="text-purple-500 mr-1 text-sm font-bold">$</span>
+                                        <input type="number" value={member.projectValue} onChange={(e) => handleUpdateField(member.id, 'projectValue', parseFloat(e.target.value) || 0)} className="bg-transparent border-none p-0 focus:ring-0 w-24 text-base transition-colors group-hover/tr:text-purple-400" />
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center text-gray-600 font-black text-2xl tracking-tighter">
+                                        <Lock className="w-5 h-5" />
+                                      </div>
+                                    )}
+                                    <div className="flex items-center text-[9px] text-purple-400 font-black uppercase tracking-widest bg-white/[0.04] border border-white/10 px-2.5 py-1 rounded-xl w-fit group/units hover:bg-white/[0.08] transition-all">
+                                      <Layers className="w-3 h-3 mr-1.5" />
+                                      <input type="number" value={member.pageCount} onChange={(e) => handleUpdateField(member.id, 'pageCount', parseInt(e.target.value) || 0)} className="bg-transparent border-none p-0 focus:ring-0 w-8 text-center" />
+                                      <span>UNITS</span>
+                                    </div>
+                                  </div>
+                                </td>
+                              </>
+                            )}
+
+                            {activeTab !== 'scheduled' && (
                             <td className="px-5 py-6 min-w-[160px]">
                               <div className="flex flex-col gap-3 group/progress-bar">
                                 <div className="flex justify-between items-center">
@@ -1260,13 +1365,34 @@ const App: React.FC = () => {
                                 )}
                               </div>
                             </td>
+                            )}
 
                             <td className="px-5 py-6 text-center">
-                              {(!guestPermissions || guestPermissions.canEdit) && (
-                                <button onClick={() => initiateDelete(member)} className="p-3 text-gray-600 hover:text-rose-500 hover:bg-rose-500/15 rounded-2xl transition-all active:scale-90 group/del">
-                                  <Trash2 className="w-5 h-5 transition-transform group-hover/del:scale-110" />
-                                </button>
-                              )}
+                              <div className="flex items-center justify-center gap-2">
+                                {isAdmin && activeTab === 'fleet' && !member.isScheduled && (
+                                  <button 
+                                    onClick={() => handleUpdateField(member.id, 'isScheduled', true)}
+                                    className="p-3 text-gray-600 hover:text-amber-500 hover:bg-amber-500/15 rounded-2xl transition-all active:scale-90 group/sched"
+                                    title="Add to Scheduled Ops"
+                                  >
+                                    <CalendarPlus className="w-5 h-5 transition-transform group-hover/sched:scale-110" />
+                                  </button>
+                                )}
+                                {isAdmin && member.isScheduled && (activeTab === 'scheduled' || activeTab === 'fleet') && (
+                                  <button 
+                                    onClick={() => handleUpdateField(member.id, 'isScheduled', false)}
+                                    className={`p-3 rounded-2xl transition-all active:scale-90 group/unsched ${activeTab === 'fleet' ? 'text-amber-500 bg-amber-500/10 hover:bg-amber-500/20' : 'text-gray-600 hover:text-purple-500 hover:bg-purple-500/15'}`}
+                                    title="Remove from Schedule"
+                                  >
+                                    <CalendarMinus className="w-5 h-5 transition-transform group-hover/unsched:scale-110" />
+                                  </button>
+                                )}
+                                {(!guestPermissions || guestPermissions.canEdit) && (
+                                  <button onClick={() => initiateDelete(member)} className="p-3 text-gray-600 hover:text-rose-500 hover:bg-rose-500/15 rounded-2xl transition-all active:scale-90 group/del">
+                                    <Trash2 className="w-5 h-5 transition-transform group-hover/del:scale-110" />
+                                  </button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         );
