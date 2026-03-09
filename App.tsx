@@ -336,10 +336,13 @@ const App: React.FC = () => {
   }, [history]);
 
   const ledgerStats = useMemo(() => {
+    const currentMonthYear = new Date().toLocaleString('default', { month: 'short', year: 'numeric' });
     const groups: Record<string, { 
       name: string, 
       color: string, 
       totalValue: number, 
+      deliveredThisMonth: number,
+      wipTotalValue: number,
       projectsCount: number, 
       avgProgress: number,
       monthlyBreakdown: Record<string, { projects: number, revenue: number }>,
@@ -369,6 +372,8 @@ const App: React.FC = () => {
           name: item.name, 
           color: item.themeColor, 
           totalValue: 0, 
+          deliveredThisMonth: 0,
+          wipTotalValue: 0,
           projectsCount: 0, 
           avgProgress: 0,
           monthlyBreakdown: {},
@@ -386,6 +391,12 @@ const App: React.FC = () => {
       groups[item.name].monthlyBreakdown[monthYear].revenue += item.projectValue;
       
       groups[item.name].totalValue += item.projectValue;
+      if (item.isDelivered && monthYear === currentMonthYear) {
+        groups[item.name].deliveredThisMonth += item.projectValue;
+      }
+      if (!item.isDelivered) {
+        groups[item.name].wipTotalValue += item.projectValue;
+      }
       groups[item.name].projectsCount += 1;
       groups[item.name].avgProgress += item.progress;
       groups[item.name].projectDetails.push({
@@ -1555,40 +1566,69 @@ const App: React.FC = () => {
                           </div>
                         )}
 
-                      <div className="grid grid-cols-3 gap-2 md:gap-4 mb-6 md:mb-8">
+                      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 mb-6 md:mb-8">
                         {(!guestPermissions || guestPermissions.canViewFinancials) ? (
-                          <div className="bg-white/[0.02] p-3 md:p-4 rounded-2xl border border-white/5 group-hover:bg-white/[0.04] transition-colors">
-                            <p className="text-[7px] md:text-[8px] font-black text-gray-600 uppercase tracking-[0.2em] mb-1 md:mb-1.5 flex items-center gap-1 md:gap-1.5">
-                              <DollarSign className="w-2 h-2 text-emerald-500" /> <span className="hidden xs:inline">Liquidated</span><span className="xs:hidden">Val</span>
+                          <div className="flex flex-col justify-between bg-gradient-to-br from-white/[0.03] to-transparent p-4 md:p-5 rounded-2xl border border-white/[0.05] hover:border-emerald-500/30 transition-all relative overflow-hidden group/stat">
+                            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover/stat:opacity-100 transition-opacity"></div>
+                            <p className="text-[9px] md:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 md:mb-3 flex items-center gap-2 relative z-10">
+                              <DollarSign className="w-3 h-3 text-emerald-500" /> VAL
                             </p>
-                            <p className="text-sm md:text-xl font-black text-white font-mono tracking-tighter truncate">${stat.totalValue.toLocaleString()}</p>
+                            <p className="text-xl md:text-2xl font-black text-white font-mono tracking-tighter truncate relative z-10">${stat.totalValue.toLocaleString()}</p>
                           </div>
                         ) : (
-                          <div className="bg-white/[0.02] p-3 md:p-4 rounded-2xl border border-white/5 group-hover:bg-white/[0.04] transition-colors flex items-center justify-center">
-                            <Lock className="w-4 h-4 text-gray-600" />
+                          <div className="flex flex-col justify-center items-center bg-gradient-to-br from-white/[0.03] to-transparent p-4 md:p-5 rounded-2xl border border-white/[0.05] relative overflow-hidden">
+                            <Lock className="w-5 h-5 text-gray-600" />
                           </div>
                         )}
-                        <div className="bg-white/[0.02] p-3 md:p-4 rounded-2xl border border-white/5 group-hover:bg-white/[0.04] transition-colors">
-                          <p className="text-[7px] md:text-[8px] font-black text-gray-600 uppercase tracking-[0.2em] mb-1 md:mb-1.5 flex items-center gap-1 md:gap-1.5">
-                            <Package className="w-2 h-2 text-blue-500" /> <span className="hidden xs:inline">Projects</span><span className="xs:hidden">Proj</span>
+                        {(!guestPermissions || guestPermissions.canViewFinancials) ? (
+                          <div className="flex flex-col justify-between bg-gradient-to-br from-white/[0.03] to-transparent p-4 md:p-5 rounded-2xl border border-white/[0.05] hover:border-blue-500/30 transition-all relative overflow-hidden group/stat">
+                            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover/stat:opacity-100 transition-opacity"></div>
+                            <p className="text-[9px] md:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 md:mb-3 flex items-center gap-2 relative z-10">
+                              <TrendingUp className="w-3 h-3 text-blue-500" /> DLV (MO)
+                            </p>
+                            <p className="text-xl md:text-2xl font-black text-white font-mono tracking-tighter truncate relative z-10">${stat.deliveredThisMonth.toLocaleString()}</p>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col justify-center items-center bg-gradient-to-br from-white/[0.03] to-transparent p-4 md:p-5 rounded-2xl border border-white/[0.05] relative overflow-hidden">
+                            <Lock className="w-5 h-5 text-gray-600" />
+                          </div>
+                        )}
+                        {(!guestPermissions || guestPermissions.canViewFinancials) ? (
+                          <div className="flex flex-col justify-between bg-gradient-to-br from-white/[0.03] to-transparent p-4 md:p-5 rounded-2xl border border-white/[0.05] hover:border-amber-500/30 transition-all relative overflow-hidden group/stat">
+                            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover/stat:opacity-100 transition-opacity"></div>
+                            <p className="text-[9px] md:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 md:mb-3 flex items-center gap-2 relative z-10">
+                              <Clock className="w-3 h-3 text-amber-500" /> WIP (TOTAL)
+                            </p>
+                            <p className="text-xl md:text-2xl font-black text-white font-mono tracking-tighter truncate relative z-10">${stat.wipTotalValue.toLocaleString()}</p>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col justify-center items-center bg-gradient-to-br from-white/[0.03] to-transparent p-4 md:p-5 rounded-2xl border border-white/[0.05] relative overflow-hidden">
+                            <Lock className="w-5 h-5 text-gray-600" />
+                          </div>
+                        )}
+                        <div className="flex flex-col justify-between bg-gradient-to-br from-white/[0.03] to-transparent p-4 md:p-5 rounded-2xl border border-white/[0.05] hover:border-indigo-500/30 transition-all relative overflow-hidden group/stat">
+                          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 group-hover/stat:opacity-100 transition-opacity"></div>
+                          <p className="text-[9px] md:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 md:mb-3 flex items-center gap-2 relative z-10">
+                            <Package className="w-3 h-3 text-indigo-500" /> PROJ
                           </p>
-                          <div className="flex items-baseline gap-2">
-                            <p className="text-sm md:text-xl font-black text-white font-mono tracking-tighter">{stat.projectsCount}</p>
+                          <div className="flex items-baseline gap-2 relative z-10">
+                            <p className="text-xl md:text-2xl font-black text-white font-mono tracking-tighter">{stat.projectsCount}</p>
                             <div className="flex gap-1">
-                              <span className="text-[8px] font-black text-amber-500 bg-amber-500/10 px-1 py-0.5 rounded">
+                              <span className="text-[8px] font-black text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">
                                 {members.filter(m => m.name === stat.name && !m.isDelivered).length} WIP
                               </span>
-                              <span className="text-[8px] font-black text-emerald-500 bg-emerald-500/10 px-1 py-0.5 rounded">
+                              <span className="text-[8px] font-black text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">
                                 {members.filter(m => m.name === stat.name && m.isDelivered).length} DLV
                               </span>
                             </div>
                           </div>
                         </div>
-                        <div className="bg-white/[0.02] p-3 md:p-4 rounded-2xl border border-white/5 group-hover:bg-white/[0.04] transition-colors">
-                          <p className="text-[7px] md:text-[8px] font-black text-gray-600 uppercase tracking-[0.2em] mb-1 md:mb-1.5 flex items-center gap-1 md:gap-1.5">
-                            <Zap className="w-2 h-2 text-purple-500" /> <span className="hidden xs:inline">Avg. Sync</span><span className="xs:hidden">Sync</span>
+                        <div className="flex flex-col justify-between bg-gradient-to-br from-white/[0.03] to-transparent p-4 md:p-5 rounded-2xl border border-white/[0.05] hover:border-purple-500/30 transition-all relative overflow-hidden group/stat">
+                          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover/stat:opacity-100 transition-opacity"></div>
+                          <p className="text-[9px] md:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 md:mb-3 flex items-center gap-2 relative z-10">
+                            <Zap className="w-3 h-3 text-purple-500" /> SYNC
                           </p>
-                          <p className="text-sm md:text-xl font-black text-white font-mono tracking-tighter">{stat.avgProgress}%</p>
+                          <p className="text-xl md:text-2xl font-black text-white font-mono tracking-tighter relative z-10">{stat.avgProgress}%</p>
                         </div>
                       </div>
 
