@@ -34,8 +34,10 @@ export interface GuestAccess {
   role: UserRole;
   canEdit: boolean;
   canViewFleet: boolean;
+  canViewScheduled: boolean;
   canViewDelivery: boolean;
   canViewLedger: boolean;
+  canViewPerformance: boolean;
   canViewFinancials: boolean;
 }
 

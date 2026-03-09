@@ -124,12 +124,15 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (guestPermissions) {
-      if (activeTab === 'fleet' && !guestPermissions.canViewFleet) {
-        setActiveTab(guestPermissions.canViewDelivery ? 'delivery' : (guestPermissions.canViewLedger ? 'ledger' : 'fleet'));
-      } else if (activeTab === 'delivery' && !guestPermissions.canViewDelivery) {
-        setActiveTab(guestPermissions.canViewFleet ? 'fleet' : (guestPermissions.canViewLedger ? 'ledger' : 'fleet'));
-      } else if (activeTab === 'ledger' && !guestPermissions.canViewLedger) {
-        setActiveTab(guestPermissions.canViewFleet ? 'fleet' : (guestPermissions.canViewDelivery ? 'delivery' : 'fleet'));
+      const allowedTabs = [];
+      if (guestPermissions.canViewFleet) allowedTabs.push('fleet');
+      if (guestPermissions.canViewScheduled) allowedTabs.push('scheduled');
+      if (guestPermissions.canViewDelivery) allowedTabs.push('delivery');
+      if (guestPermissions.canViewLedger) allowedTabs.push('ledger');
+      if (guestPermissions.canViewPerformance) allowedTabs.push('performance');
+
+      if (allowedTabs.length > 0 && !allowedTabs.includes(activeTab)) {
+        setActiveTab(allowedTabs[0] as any);
       }
     }
     
@@ -151,13 +154,32 @@ const App: React.FC = () => {
             setMembers(cloudData.members);
             setHistory(cloudData.history);
             setLogoUrl(cloudData.logoUrl || DEFAULT_LOGO_URL);
-            setGuests((cloudData.guests || []).map(g => ({ ...g, role: g.role || 'Viewer', canEdit: g.canEdit ?? false })));
+            setGuests((cloudData.guests || []).map(g => ({ 
+              ...g, 
+              role: g.role || 'Viewer', 
+              canEdit: g.canEdit ?? false,
+              canViewFleet: g.canViewFleet ?? true,
+              canViewScheduled: g.canViewScheduled ?? g.canViewFleet ?? true,
+              canViewDelivery: g.canViewDelivery ?? true,
+              canViewLedger: g.canViewLedger ?? true,
+              canViewPerformance: g.canViewPerformance ?? false,
+              canViewFinancials: g.canViewFinancials ?? false
+            })));
             setGuestPermissions(null);
           } else {
             const adminData = await SyncService.fetchUserData('farhadhossain6920@gmail.com');
-            const guestAccess = adminData.guests?.find(g => g.email === currentUser.email);
+            const rawGuestAccess = adminData.guests?.find(g => g.email === currentUser.email);
             
-            if (guestAccess) {
+            if (rawGuestAccess) {
+              const guestAccess = {
+                ...rawGuestAccess,
+                canViewFleet: rawGuestAccess.canViewFleet ?? true,
+                canViewScheduled: rawGuestAccess.canViewScheduled ?? rawGuestAccess.canViewFleet ?? true,
+                canViewDelivery: rawGuestAccess.canViewDelivery ?? true,
+                canViewLedger: rawGuestAccess.canViewLedger ?? true,
+                canViewPerformance: rawGuestAccess.canViewPerformance ?? false,
+                canViewFinancials: rawGuestAccess.canViewFinancials ?? false
+              };
               setMembers(adminData.members);
               setHistory(adminData.history);
               setLogoUrl(adminData.logoUrl || DEFAULT_LOGO_URL);
@@ -872,7 +894,7 @@ const App: React.FC = () => {
               Fleet Operations
             </button>
           )}
-          {(!guestPermissions || guestPermissions.canViewFleet) && (
+          {(!guestPermissions || guestPermissions.canViewScheduled) && (
             <button 
               onClick={() => setActiveTab('scheduled')}
               className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeTab === 'scheduled' ? 'bg-amber-600 text-white shadow-[0_0_20px_rgba(245,158,11,0.3)]' : 'text-gray-600 hover:text-gray-400'}`}
@@ -904,7 +926,7 @@ const App: React.FC = () => {
               Member Ledger
             </button>
           )}
-          {isAdmin && (
+          {(!guestPermissions || guestPermissions.canViewPerformance) && (
             <button 
               onClick={() => setActiveTab('performance')}
               className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeTab === 'performance' ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)]' : 'text-gray-600 hover:text-gray-400'}`}

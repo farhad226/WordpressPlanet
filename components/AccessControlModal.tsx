@@ -22,8 +22,10 @@ const AccessControlModal: React.FC<AccessControlModalProps> = ({ guests, onUpdat
       role: 'Viewer',
       canEdit: false,
       canViewFleet: true,
+      canViewScheduled: true,
       canViewDelivery: true,
       canViewLedger: true,
+      canViewPerformance: false,
       canViewFinancials: false
     };
     
@@ -123,19 +125,19 @@ const AccessControlModal: React.FC<AccessControlModalProps> = ({ guests, onUpdat
                           const newRole = e.target.value as UserRole;
                           let newPermissions = { ...guest, role: newRole };
                           if (newRole === 'Admin') {
-                            newPermissions = { ...newPermissions, canEdit: true, canViewFleet: true, canViewDelivery: true, canViewLedger: true, canViewFinancials: true };
+                            newPermissions = { ...newPermissions, canEdit: true, canViewFleet: true, canViewScheduled: true, canViewDelivery: true, canViewLedger: true, canViewPerformance: true, canViewFinancials: true };
                           } else if (newRole === 'Editor') {
-                            newPermissions = { ...newPermissions, canEdit: true, canViewFleet: true, canViewDelivery: true, canViewLedger: true, canViewFinancials: false };
+                            newPermissions = { ...newPermissions, canEdit: true, canViewFleet: true, canViewScheduled: true, canViewDelivery: true, canViewLedger: true, canViewPerformance: false, canViewFinancials: false };
                           } else {
-                            newPermissions = { ...newPermissions, canEdit: false, canViewFleet: true, canViewDelivery: true, canViewLedger: false, canViewFinancials: false };
+                            newPermissions = { ...newPermissions, canEdit: false, canViewFleet: true, canViewScheduled: true, canViewDelivery: true, canViewLedger: false, canViewPerformance: false, canViewFinancials: false };
                           }
                           setLocalGuests(localGuests.map(g => g.email === guest.email ? newPermissions : g));
                         }}
                         className="bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-[10px] font-black uppercase tracking-widest text-white focus:outline-none focus:border-purple-500/50"
                       >
-                        <option value="Admin">Admin</option>
-                        <option value="Editor">Editor</option>
-                        <option value="Viewer">Viewer</option>
+                        <option value="Admin" className="bg-gray-900 text-white">Admin</option>
+                        <option value="Editor" className="bg-gray-900 text-white">Editor</option>
+                        <option value="Viewer" className="bg-gray-900 text-white">Viewer</option>
                       </select>
                       <button 
                         onClick={() => handleSendInvite(guest.email)} 
@@ -155,11 +157,16 @@ const AccessControlModal: React.FC<AccessControlModalProps> = ({ guests, onUpdat
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     <PermissionToggle 
                       label="Fleet Ops" 
                       active={guest.canViewFleet} 
                       onClick={() => handleTogglePermission(guest.email, 'canViewFleet')} 
+                    />
+                    <PermissionToggle 
+                      label="Scheduled Ops" 
+                      active={guest.canViewScheduled} 
+                      onClick={() => handleTogglePermission(guest.email, 'canViewScheduled')} 
                     />
                     <PermissionToggle 
                       label="Delivery" 
@@ -170,6 +177,11 @@ const AccessControlModal: React.FC<AccessControlModalProps> = ({ guests, onUpdat
                       label="Ledger" 
                       active={guest.canViewLedger} 
                       onClick={() => handleTogglePermission(guest.email, 'canViewLedger')} 
+                    />
+                    <PermissionToggle 
+                      label="Performance" 
+                      active={guest.canViewPerformance} 
+                      onClick={() => handleTogglePermission(guest.email, 'canViewPerformance')} 
                     />
                     <PermissionToggle 
                       label="Financials" 
