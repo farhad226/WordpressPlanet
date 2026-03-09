@@ -116,9 +116,9 @@ const AccessControlModal: React.FC<AccessControlModalProps> = ({ guests, onUpdat
             ) : (
               localGuests.map(guest => (
                 <div key={guest.email} className="bg-white/[0.02] border border-white/5 rounded-xl p-4 flex flex-col gap-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-black text-white">{guest.email}</span>
-                    <div className="flex items-center gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
+                    <span className="text-sm font-black text-white truncate max-w-full sm:max-w-[200px]">{guest.email}</span>
+                    <div className="flex items-center gap-2 sm:gap-3 self-end sm:self-auto">
                       <select 
                         value={guest.role}
                         onChange={(e) => {

@@ -796,7 +796,7 @@ const App: React.FC = () => {
                     title="Seed Database from CSV"
                   >
                     <Database className="w-3 h-3 group-hover/seed:rotate-12 transition-transform" />
-                    Seed Data
+                    <span className="hidden sm:inline">Seed Data</span>
                   </button>
                   <button 
                     onClick={clearAllProjects}
@@ -804,7 +804,7 @@ const App: React.FC = () => {
                     title="Clear All Projects"
                   >
                     <Trash2 className="w-3 h-3 group-hover/clear:scale-110 transition-transform" />
-                    Clear All
+                    <span className="hidden sm:inline">Clear All</span>
                   </button>
                 </div>
               )}
@@ -815,7 +815,7 @@ const App: React.FC = () => {
                   title="Manage Guest Access"
                 >
                   <Shield className="w-3 h-3 group-hover/access:scale-110 transition-transform" />
-                  Manage Guests
+                  <span className="hidden sm:inline">Manage Guests</span>
                 </button>
               )}
               {isAdmin && (
@@ -895,11 +895,11 @@ const App: React.FC = () => {
         )}
 
         {/* TAB NAVIGATION */}
-        <div className="flex items-center gap-1 mb-8 p-1 bg-white/[0.02] border border-white/10 rounded-2xl w-full sm:w-fit backdrop-blur-xl animate-in slide-in-from-left-4 duration-500 overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-1 mb-8 p-1 bg-white/[0.02] border border-white/10 rounded-2xl w-full sm:w-fit backdrop-blur-xl animate-in slide-in-from-left-4 duration-500 overflow-x-auto no-scrollbar snap-x snap-mandatory">
           {(!guestPermissions || guestPermissions.canViewFleet) && (
             <button 
               onClick={() => setActiveTab('fleet')}
-              className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeTab === 'fleet' ? 'bg-white/10 text-white shadow-xl' : 'text-gray-600 hover:text-gray-400'}`}
+              className={`snap-start flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeTab === 'fleet' ? 'bg-white/10 text-white shadow-xl' : 'text-gray-600 hover:text-gray-400'}`}
             >
               <Activity className="w-3 h-3 md:w-3.5 md:h-3.5" />
               Fleet Operations
@@ -908,7 +908,7 @@ const App: React.FC = () => {
           {(!guestPermissions || guestPermissions.canViewScheduled) && (
             <button 
               onClick={() => setActiveTab('scheduled')}
-              className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeTab === 'scheduled' ? 'bg-amber-600 text-white shadow-[0_0_20px_rgba(245,158,11,0.3)]' : 'text-gray-600 hover:text-gray-400'}`}
+              className={`snap-start flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeTab === 'scheduled' ? 'bg-amber-600 text-white shadow-[0_0_20px_rgba(245,158,11,0.3)]' : 'text-gray-600 hover:text-gray-400'}`}
             >
               <Calendar className="w-3 h-3 md:w-3.5 md:h-3.5" />
               Scheduled Ops
@@ -917,7 +917,7 @@ const App: React.FC = () => {
           {(!guestPermissions || guestPermissions.canViewDelivery) && (
             <button 
               onClick={() => setActiveTab('delivery')}
-              className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] transition-all relative whitespace-nowrap ${activeTab === 'delivery' ? 'bg-purple-600 text-white shadow-[0_0_20px_rgba(147,51,234,0.3)]' : 'text-gray-600 hover:text-gray-400'}`}
+              className={`snap-start flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] transition-all relative whitespace-nowrap ${activeTab === 'delivery' ? 'bg-purple-600 text-white shadow-[0_0_20px_rgba(147,51,234,0.3)]' : 'text-gray-600 hover:text-gray-400'}`}
             >
               <Rocket className="w-3 h-3 md:w-3.5 md:h-3.5" />
               Delivery Stream
@@ -931,7 +931,7 @@ const App: React.FC = () => {
           {(!guestPermissions || guestPermissions.canViewLedger) && (
             <button 
               onClick={() => setActiveTab('ledger')}
-              className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeTab === 'ledger' ? 'bg-emerald-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'text-gray-600 hover:text-gray-400'}`}
+              className={`snap-start flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeTab === 'ledger' ? 'bg-emerald-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'text-gray-600 hover:text-gray-400'}`}
             >
               <History className="w-3 h-3 md:w-3.5 md:h-3.5" />
               Member Ledger
@@ -940,7 +940,7 @@ const App: React.FC = () => {
           {(!guestPermissions || guestPermissions.canViewPerformance) && (
             <button 
               onClick={() => setActiveTab('performance')}
-              className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeTab === 'performance' ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)]' : 'text-gray-600 hover:text-gray-400'}`}
+              className={`snap-start flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeTab === 'performance' ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)]' : 'text-gray-600 hover:text-gray-400'}`}
             >
               <TrendingUp className="w-3 h-3 md:w-3.5 md:h-3.5" />
               Performance
@@ -1005,14 +1005,14 @@ const App: React.FC = () => {
                               type="text" 
                               value={member.projectName} 
                               onChange={(e) => handleUpdateField(member.id, 'projectName', e.target.value)} 
-                              className="bg-transparent border-none p-0 text-[10px] text-gray-400 font-bold uppercase tracking-tight focus:ring-0 w-full hover:bg-white/10 rounded transition-all"
+                              className="bg-transparent border-none p-0 py-1 text-[10px] text-gray-400 font-bold uppercase tracking-tight focus:ring-0 w-full hover:bg-white/10 rounded transition-all"
                             />
                             {isAdmin && (
                               <input 
                                 type="text" 
                                 value={member.projectUrl} 
                                 onChange={(e) => handleUpdateField(member.id, 'projectUrl', e.target.value)} 
-                                className="bg-transparent border-none p-0 text-[9px] text-purple-500/70 font-bold uppercase tracking-tight focus:ring-0 w-full hover:bg-white/10 rounded transition-all"
+                                className="bg-transparent border-none p-0 py-1 text-[9px] text-purple-500/70 font-bold uppercase tracking-tight focus:ring-0 w-full hover:bg-white/10 rounded transition-all"
                               />
                             )}
                           </div>
@@ -1468,12 +1468,12 @@ const App: React.FC = () => {
                 <h2 className="text-xl font-black uppercase tracking-widest text-white">Historical Node Ledger</h2>
               </div>
               
-              <div className="flex items-center gap-3 w-full md:w-auto">
-                <div className="relative">
+              <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                <div className="relative w-full sm:w-auto">
                   <select
                     value={ledgerMonthFilter}
                     onChange={(e) => setLedgerMonthFilter(e.target.value)}
-                    className="appearance-none pl-4 pr-10 py-2.5 bg-emerald-500/[0.02] border border-emerald-500/10 rounded-xl focus:outline-none focus:border-emerald-500/40 backdrop-blur-3xl transition-all text-xs font-black text-emerald-400 uppercase tracking-widest cursor-pointer"
+                    className="w-full sm:w-auto appearance-none pl-4 pr-10 py-2.5 bg-emerald-500/[0.02] border border-emerald-500/10 rounded-xl focus:outline-none focus:border-emerald-500/40 backdrop-blur-3xl transition-all text-xs font-black text-emerald-400 uppercase tracking-widest cursor-pointer"
                   >
                     <option value="All" className="bg-gray-900">All Time</option>
                     {availableMonths.map(month => (
@@ -1566,7 +1566,7 @@ const App: React.FC = () => {
                           </div>
                         )}
 
-                      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 mb-6 md:mb-8">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 mb-6 md:mb-8">
                         {(!guestPermissions || guestPermissions.canViewFinancials) ? (
                           <div className="flex flex-col justify-between bg-gradient-to-br from-white/[0.03] to-transparent p-4 md:p-5 rounded-2xl border border-white/[0.05] hover:border-emerald-500/30 transition-all relative overflow-hidden group/stat">
                             <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover/stat:opacity-100 transition-opacity"></div>
@@ -1611,7 +1611,7 @@ const App: React.FC = () => {
                           <p className="text-[9px] md:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 md:mb-3 flex items-center gap-2 relative z-10">
                             <Package className="w-3 h-3 text-indigo-500" /> PROJ
                           </p>
-                          <div className="flex items-baseline gap-2 relative z-10">
+                          <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2 relative z-10">
                             <p className="text-xl md:text-2xl font-black text-white font-mono tracking-tighter">{stat.projectsCount}</p>
                             <div className="flex gap-1">
                               <span className="text-[8px] font-black text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">
@@ -1902,7 +1902,7 @@ const PerformanceView = ({ members }: { members: any[] }) => {
     <div className="space-y-6 animate-in fade-in zoom-in duration-700">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <h2 className="text-xl font-black uppercase tracking-widest text-white">Performance Analytics</h2>
-        <div className="flex items-center gap-4 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 w-full sm:w-auto">
           <input 
             type="text" 
             placeholder="Search member..."
@@ -1911,7 +1911,7 @@ const PerformanceView = ({ members }: { members: any[] }) => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
           <select 
-            className="bg-[#050505] border border-white/20 text-white text-sm rounded-xl px-4 py-2 focus:outline-none focus:border-purple-500/50 transition-all duration-300"
+            className="bg-[#050505] border border-white/20 text-white text-sm rounded-xl px-4 py-2 focus:outline-none focus:border-purple-500/50 transition-all duration-300 w-full sm:w-auto"
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
           >
