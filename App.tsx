@@ -994,7 +994,7 @@ const App: React.FC = () => {
 
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       <div className="space-y-1">
-                        <p className="text-[8px] font-black text-gray-600 uppercase tracking-widest">{activeTab === 'scheduled' ? 'Target Date' : 'Remaining'}</p>
+                        <p className="text-[8px] font-black text-gray-600 uppercase tracking-widest">{activeTab === 'scheduled' ? 'Target Date' : 'Deployment'}</p>
                         {activeTab === 'scheduled' ? (
                           <div className="flex flex-col gap-2">
                             <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-2 py-1 rounded-lg">
@@ -1017,9 +1017,21 @@ const App: React.FC = () => {
                             )}
                           </div>
                         ) : (
-                          <div className={`flex items-center gap-2 px-2 py-1 rounded-lg border ${remaining.isOverdue ? 'bg-rose-500/10 border-rose-500/30 text-rose-500' : (isUrgent ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'bg-white/5 border-white/10 text-white')}`}>
-                            <Clock className="w-3 h-3" />
-                            <span className="text-xs font-black font-mono">{remaining.isOverdue ? 'OVERDUE' : `${remaining.days}d ${remaining.hours}h`}</span>
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-2 py-1 rounded-lg">
+                              <Calendar className="w-3 h-3 text-gray-400" />
+                              <input 
+                                type="date" 
+                                value={member.deliveryDate} 
+                                onChange={(e) => handleUpdateField(member.id, 'deliveryDate', e.target.value)} 
+                                className="bg-transparent border-none p-0 text-[10px] font-mono text-white focus:ring-0 w-full [color-scheme:dark]"
+                                disabled={!isAdmin && (!guestPermissions || !guestPermissions.canEdit)}
+                              />
+                            </div>
+                            <div className={`flex items-center gap-2 px-2 py-1 rounded-lg border ${remaining.isOverdue ? 'bg-rose-500/10 border-rose-500/30 text-rose-500' : (isUrgent ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'bg-white/5 border-white/10 text-white')}`}>
+                              <Clock className="w-3 h-3" />
+                              <span className="text-xs font-black font-mono">{remaining.isOverdue ? 'OVERDUE' : `${remaining.days}d ${remaining.hours}h`}</span>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -1255,11 +1267,15 @@ const App: React.FC = () => {
                                       </span>
                                     </div>
                                   ) : (
-                                    <div className="flex items-center gap-2 opacity-60 cursor-not-allowed" title="Move to Scheduled Ops to edit date">
-                                      <Calendar className="w-3 h-3 text-gray-600" />
-                                      <span className={`font-mono text-[11px] ${isCritical ? 'text-rose-400' : 'text-gray-400'}`}>
-                                        {member.deliveryDate}
-                                      </span>
+                                    <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors group/date cursor-pointer">
+                                      <Calendar className="w-3 h-3 text-gray-400 group-hover/date:text-purple-400" />
+                                      <input 
+                                        type="date" 
+                                        value={member.deliveryDate} 
+                                        onChange={(e) => handleUpdateField(member.id, 'deliveryDate', e.target.value)} 
+                                        className={`bg-transparent border-none p-0 ${isCritical ? 'text-rose-400' : 'text-white'} font-mono text-[11px] focus:ring-0 [color-scheme:dark] cursor-pointer w-full`} 
+                                        disabled={!isAdmin && (!guestPermissions || !guestPermissions.canEdit)}
+                                      />
                                     </div>
                                   )}
                                   {activeTab === 'scheduled' && member.targetDate && new Date() >= new Date(member.targetDate) && (
